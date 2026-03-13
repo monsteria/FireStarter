@@ -1,0 +1,3003 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FIRE Starter — Financial Independence Planner</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=JetBrains+Mono:wght@300;400;500&family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+[data-theme="dark"]{
+  --bg:#080d0a;--bg2:#0e1612;--bg3:#121d15;--surface:#172218;--surface2:#1e2e21;
+  --glass:rgba(23,34,24,0.9);--border:rgba(74,222,128,0.12);--border2:rgba(74,222,128,0.28);
+  --accent:#4ade80;--accent2:#22c55e;--accent3:#86efac;--accent-glow:rgba(74,222,128,0.18);
+  --amber:#fbbf24;--amber-dim:rgba(251,191,36,0.14);
+  --red:#f87171;--red-dim:rgba(248,113,113,0.12);
+  --blue:#60a5fa;--blue-dim:rgba(96,165,250,0.12);
+  --purple:#c084fc;--purple-dim:rgba(192,132,252,0.12);
+  --teal:#2dd4bf;--teal-dim:rgba(45,212,191,0.12);
+  --text:#e2f0e6;--text2:#94b89d;--text3:#4d7057;--text-inv:#0a1a0e;
+  --shadow:0 8px 32px rgba(0,0,0,0.6);--shadow-sm:0 2px 8px rgba(0,0,0,0.4);
+  --scrollbar:rgba(74,222,128,0.2);--chart-grid:rgba(74,222,128,0.07);
+  --input-bg:#0c1510;--modal-bg:rgba(8,13,10,0.88);--topo:rgba(74,222,128,0.025);
+  --logo-grad:linear-gradient(135deg,#4ade80 0%,#22d3ee 100%);
+  --info-bg:#131f16;--info-border:rgba(74,222,128,0.25);
+}
+[data-theme="light"]{
+  --bg:#f4f7f5;--bg2:#ffffff;--bg3:#ecf3ed;--surface:#ffffff;--surface2:#eef5ef;
+  --glass:rgba(255,255,255,0.95);--border:rgba(34,197,94,0.18);--border2:rgba(34,197,94,0.38);
+  --accent:#16a34a;--accent2:#15803d;--accent3:#22c55e;--accent-glow:rgba(22,163,74,0.12);
+  --amber:#d97706;--amber-dim:rgba(217,119,6,0.1);
+  --red:#dc2626;--red-dim:rgba(220,38,38,0.08);
+  --blue:#2563eb;--blue-dim:rgba(37,99,235,0.08);
+  --purple:#7c3aed;--purple-dim:rgba(124,58,237,0.08);
+  --teal:#0d9488;--teal-dim:rgba(13,148,136,0.1);
+  --text:#1a2e1e;--text2:#3d6147;--text3:#6b9472;--text-inv:#ffffff;
+  --shadow:0 8px 32px rgba(0,0,0,0.1);--shadow-sm:0 2px 8px rgba(0,0,0,0.06);
+  --scrollbar:rgba(22,163,74,0.3);--chart-grid:rgba(22,163,74,0.09);
+  --input-bg:#f0f5f1;--modal-bg:rgba(244,247,245,0.88);--topo:rgba(22,163,74,0.04);
+  --logo-grad:linear-gradient(135deg,#16a34a 0%,#0891b2 100%);
+  --info-bg:#f0fdf4;--info-border:rgba(22,163,74,0.25);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--radius:14px;--radius-sm:8px;--font-d:'Playfair Display',serif;--font-b:'Nunito',sans-serif;--font-m:'JetBrains Mono',monospace;--ease:cubic-bezier(.4,0,.2,1);--t:all .2s var(--ease)}
+html{font-size:14px}
+body{background:var(--bg);color:var(--text);font-family:var(--font-b);line-height:1.6;min-height:100vh;overflow-x:hidden;transition:background .3s,color .3s}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 40% at 20% 20%,rgba(74,222,128,.03),transparent 70%),radial-gradient(ellipse 40% 50% at 80% 70%,rgba(96,165,250,.02),transparent 70%);pointer-events:none;z-index:0}
+.app{display:flex;height:100vh;overflow:hidden;position:relative;z-index:1}
+/* SIDEBAR */
+.sidebar{width:232px;min-width:232px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;position:relative;z-index:10;transition:background .3s,border-color .3s}
+.sidebar::after{content:'';position:absolute;inset:0;background-image:repeating-linear-gradient(0deg,transparent,transparent 28px,var(--topo) 28px,var(--topo) 29px);pointer-events:none;z-index:0}
+.sidebar-logo{padding:22px 20px 14px;border-bottom:1px solid var(--border);position:relative;z-index:1}
+.logo-flame{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.logo-icon{width:32px;height:32px;background:var(--logo-grad);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 4px 12px var(--accent-glow)}
+.logo-text{font-family:var(--font-d);font-size:20px;font-weight:700;background:var(--logo-grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.logo-sub{font-size:9.5px;color:var(--text3);letter-spacing:2.5px;text-transform:uppercase;font-family:var(--font-m);padding-left:2px}
+.sidebar-nav{padding:8px 0;flex:1;position:relative;z-index:1}
+.nav-section-label{padding:10px 20px 4px;font-size:9px;color:var(--text3);letter-spacing:2.5px;text-transform:uppercase;font-family:var(--font-m);font-weight:500}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 20px;cursor:pointer;color:var(--text3);font-size:13px;font-weight:500;transition:var(--t);border-left:2px solid transparent;margin:1px 0;position:relative}
+.nav-item:hover{color:var(--text2);background:rgba(74,222,128,.05);border-left-color:var(--border2)}
+.nav-item.active{color:var(--accent);background:rgba(74,222,128,.08);border-left-color:var(--accent);font-weight:600}
+.nav-item.active::after{content:'';position:absolute;right:12px;width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);opacity:.8}
+.nav-icon{font-size:14px;width:18px;text-align:center}
+.sidebar-footer{padding:12px 14px 14px;border-top:1px solid var(--border);position:relative;z-index:1}
+.fire-card{background:linear-gradient(135deg,var(--surface2),var(--bg3));border:1px solid var(--border2);border-radius:var(--radius);padding:12px;text-align:center;position:relative;overflow:hidden}
+.fire-card::before{content:'';position:absolute;top:-30px;right:-30px;width:80px;height:80px;border-radius:50%;background:var(--accent-glow);pointer-events:none}
+.fire-label{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:2px;font-family:var(--font-m)}
+.fire-value{font-family:var(--font-d);font-size:20px;font-weight:700;color:var(--accent);margin-top:2px;line-height:1.1}
+.fire-sub{font-size:10px;color:var(--text3);font-family:var(--font-m);margin-top:3px}
+/* TOPBAR */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative;z-index:1}
+.topbar{height:58px;background:var(--glass);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:10px;flex-shrink:0}
+.topbar-title{font-family:var(--font-d);font-size:18px;font-weight:600;color:var(--text);flex:1}
+.topbar-meta{font-size:11px;color:var(--text3);font-family:var(--font-m)}
+.theme-wrap{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.theme-lbl{font-size:11px;color:var(--text3);font-family:var(--font-m);width:28px;text-align:right}
+.theme-toggle{width:42px;height:22px;background:var(--surface2);border:1px solid var(--border2);border-radius:11px;position:relative;cursor:pointer;transition:var(--t)}
+.theme-toggle::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--accent);transition:transform .3s var(--ease);box-shadow:0 0 6px var(--accent-glow)}
+[data-theme="light"] .theme-toggle::after{transform:translateX(20px)}
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--radius-sm);font-size:12px;font-family:var(--font-b);font-weight:600;cursor:pointer;transition:var(--t);border:1px solid var(--border);background:var(--surface);color:var(--text2);white-space:nowrap;user-select:none}
+.btn:hover{border-color:var(--border2);color:var(--text);background:var(--surface2);transform:translateY(-1px);box-shadow:var(--shadow-sm)}
+.btn:active{transform:translateY(0)}
+.btn.primary{background:var(--accent);color:var(--text-inv);border-color:var(--accent);font-weight:700;box-shadow:0 4px 12px var(--accent-glow)}
+.btn.primary:hover{background:var(--accent3);border-color:var(--accent3);color:var(--text-inv);box-shadow:0 6px 18px var(--accent-glow);transform:translateY(-2px)}
+.btn.danger{background:var(--red-dim);border-color:rgba(248,113,113,.3);color:var(--red)}
+.btn.danger:hover{background:rgba(248,113,113,.2);color:var(--red)}
+.btn.sm{padding:4px 9px;font-size:11px}
+.btn.icon{padding:5px 8px;font-size:12px}
+/* CONTENT */
+.content{flex:1;overflow-y:auto;padding:22px 24px}
+/* PANELS */
+.panel{background:var(--glass);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:18px;transition:border-color .2s,box-shadow .2s}
+.panel:hover{border-color:var(--border2);box-shadow:var(--shadow-sm)}
+.panel-header{display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border);gap:8px;background:rgba(0,0,0,.03)}
+[data-theme="light"] .panel-header{background:rgba(0,0,0,.015)}
+.panel-title{font-weight:700;font-size:13px;color:var(--text);flex:1}
+.panel-body{padding:16px}
+/* GRIDS */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.mb{margin-bottom:18px}
+/* KPIs */
+.kpi{background:var(--glass);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px 14px;position:relative;overflow:hidden;cursor:default;transition:var(--t)}
+.kpi:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:var(--shadow)}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:3px 3px 0 0}
+.kpi::after{content:'';position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;opacity:.45;transition:var(--t)}
+.kpi:hover::after{transform:scale(1.2)}
+.kpi.green::before{background:linear-gradient(90deg,var(--accent),var(--accent3))}.kpi.green::after{background:var(--accent-glow)}
+.kpi.amber::before{background:linear-gradient(90deg,var(--amber),#fde68a)}.kpi.amber::after{background:var(--amber-dim)}
+.kpi.red::before{background:linear-gradient(90deg,var(--red),#fca5a5)}.kpi.red::after{background:var(--red-dim)}
+.kpi.blue::before{background:linear-gradient(90deg,var(--blue),#93c5fd)}.kpi.blue::after{background:var(--blue-dim)}
+.kpi.purple::before{background:linear-gradient(90deg,var(--purple),#e9d5ff)}.kpi.purple::after{background:var(--purple-dim)}
+.kpi.teal::before{background:linear-gradient(90deg,var(--teal),#5eead4)}.kpi.teal::after{background:var(--teal-dim)}
+.kpi-header{display:flex;align-items:center;gap:5px}
+.kpi-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.8px;font-family:var(--font-m);font-weight:500}
+.kpi-info{width:14px;height:14px;border-radius:50%;border:1px solid var(--text3);color:var(--text3);font-size:9px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:var(--t);flex-shrink:0;font-family:var(--font-m);font-weight:700}
+.kpi-info:hover{border-color:var(--accent);color:var(--accent)}
+.kpi-value{font-family:var(--font-d);font-size:26px;font-weight:700;color:var(--text);margin-top:5px;line-height:1;letter-spacing:-.5px}
+.kpi-sub{font-size:10px;color:var(--text3);margin-top:4px;font-family:var(--font-m)}
+/* INFO PANEL */
+.info-panel{background:var(--info-bg);border:1px solid var(--info-border);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:16px}
+.info-panel-title{font-weight:700;font-size:12px;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.info-section{margin-bottom:10px}
+.info-section:last-child{margin-bottom:0}
+.info-section-label{font-size:10px;font-family:var(--font-m);color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:3px}
+.info-section-text{font-size:12px;color:var(--text2);line-height:1.6}
+/* FORMS */
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px}
+.form-group{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.form-group:last-child{margin-bottom:0}
+.form-label{font-size:10px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;font-family:var(--font-m);font-weight:500}
+.form-input,.form-select{background:var(--input-bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 11px;color:var(--text);font-size:13px;font-family:var(--font-b);font-weight:500;transition:var(--t);width:100%;appearance:none}
+.form-input:focus,.form-select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow);background:var(--bg2)}
+.form-input:hover,.form-select:hover{border-color:var(--border2)}
+.form-select option{background:var(--bg2);color:var(--text)}
+.form-hint{font-size:10px;color:var(--text3);font-family:var(--font-m);margin-top:-6px;margin-bottom:4px}
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:var(--modal-bg);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:1000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s var(--ease)}
+.modal-overlay.open{opacity:1;pointer-events:auto}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:calc(var(--radius)*1.2);width:min(580px,95vw);max-height:90vh;overflow-y:auto;box-shadow:var(--shadow);transform:translateY(20px) scale(.97);transition:transform .25s var(--ease)}
+.modal-overlay.open .modal{transform:none}
+.modal-header{padding:18px 22px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.modal-title{font-family:var(--font-d);font-size:17px;font-weight:700;color:var(--text);flex:1}
+.modal-close{width:28px;height:28px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--text3);transition:var(--t)}
+.modal-close:hover{color:var(--text);border-color:var(--border2)}
+.modal-body{padding:20px 22px}
+.modal-footer{padding:14px 22px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+/* TABLE */
+.data-table{width:100%;border-collapse:collapse}
+.data-table th{text-align:left;padding:9px 13px;font-size:9.5px;color:var(--text3);text-transform:uppercase;letter-spacing:1.8px;font-family:var(--font-m);border-bottom:1px solid var(--border);font-weight:500;background:rgba(0,0,0,.02)}
+.data-table td{padding:10px 13px;font-size:13px;border-bottom:1px solid var(--border);color:var(--text2);transition:background .1s}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tr:hover td{background:rgba(74,222,128,.04);color:var(--text)}
+.data-table .mono{font-family:var(--font-m);font-size:12px}
+.data-table .pos{color:var(--accent);font-weight:600}
+.data-table .neg{color:var(--red)}
+.data-table .actions{display:flex;gap:5px;align-items:center}
+/* BADGES */
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-family:var(--font-m);font-weight:600;letter-spacing:.4px}
+.badge.green{background:var(--accent-glow);color:var(--accent);border:1px solid rgba(74,222,128,.2)}
+.badge.amber{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(251,191,36,.2)}
+.badge.red{background:var(--red-dim);color:var(--red);border:1px solid rgba(248,113,113,.2)}
+.badge.blue{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(96,165,250,.2)}
+.badge.purple{background:var(--purple-dim);color:var(--purple);border:1px solid rgba(192,132,252,.2)}
+.badge.teal{background:var(--teal-dim);color:var(--teal);border:1px solid rgba(45,212,191,.2)}
+/* TABS */
+.tab-list{display:flex;gap:2px;background:var(--input-bg);border:1px solid var(--border);border-radius:10px;padding:3px;width:fit-content;margin-bottom:18px}
+.tab-btn{padding:5px 14px;border-radius:8px;border:none;background:transparent;color:var(--text3);font-size:12px;font-family:var(--font-b);font-weight:600;cursor:pointer;transition:var(--t)}
+.tab-btn:hover{color:var(--text2)}
+.tab-btn.active{background:var(--surface);color:var(--accent);box-shadow:var(--shadow-sm)}
+/* RANGE */
+input[type=range]{-webkit-appearance:none;width:100%;height:4px;background:var(--border);border-radius:2px;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;height:17px;border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 0 0 3px var(--accent-glow),0 2px 6px rgba(0,0,0,.3);transition:transform .15s}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15)}
+/* PROGRESS BAR */
+.progress-bar{height:7px;background:var(--border);border-radius:4px;overflow:hidden}
+.progress-fill{height:100%;border-radius:4px;transition:width .6s var(--ease)}
+/* SCROLLBAR */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--scrollbar);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--border2)}
+/* VIEWS */
+.view{display:none}
+.view.active{display:block;animation:fadeUp .25s var(--ease)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+/* ALERTS */
+.alert{border-radius:var(--radius-sm);padding:11px 14px;font-size:12px;margin-bottom:16px;display:flex;gap:9px;align-items:flex-start;font-weight:500}
+.alert.success{background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.25);color:var(--accent)}
+.alert.warning{background:var(--amber-dim);border:1px solid rgba(251,191,36,.25);color:var(--amber)}
+.alert.info{background:var(--blue-dim);border:1px solid rgba(96,165,250,.25);color:var(--blue)}
+/* SCENARIO CARDS */
+.scenario-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;cursor:pointer;transition:var(--t);min-width:160px;position:relative}
+.scenario-card:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:var(--shadow-sm)}
+.scenario-card.selected{border-color:var(--accent);background:rgba(74,222,128,.06);box-shadow:0 0 0 1px var(--accent)}
+.scenario-name{font-weight:700;font-size:13px;color:var(--text);margin-bottom:4px}
+.scenario-meta{font-size:10px;color:var(--text3);font-family:var(--font-m);line-height:1.6}
+.scenario-actions{position:absolute;top:8px;right:8px;display:flex;gap:4px}
+/* TOAST */
+.toast{position:fixed;bottom:22px;right:22px;background:var(--accent);color:var(--text-inv);padding:11px 18px;border-radius:var(--radius-sm);font-size:13px;font-weight:700;box-shadow:var(--shadow);z-index:9999;transform:translateY(80px);opacity:0;transition:all .35s var(--ease)}
+.toast.show{transform:translateY(0);opacity:1}
+/* MISC */
+.chart-container{position:relative}
+/* Sankey & cashflow timeline */
+.sk-node{transition:opacity .15s}.sk-node:hover{opacity:.82;cursor:default}
+.sk-flow{transition:opacity .15s}.sk-flow:hover{opacity:.55}
+.sk-label{font-family:var(--font-m);pointer-events:none;user-select:none}
+.cf-phase-seg{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:700;font-family:var(--font-m);letter-spacing:.5px;overflow:hidden;cursor:default;border-right:1px solid var(--bg)}
+.cf-ms-marker{position:absolute;top:0;bottom:0;display:flex;flex-direction:column;align-items:center;cursor:pointer;z-index:2}
+.cf-ms-line{width:2px;flex:1;background:var(--border2)}
+.cf-ms-dot{width:8px;height:8px;border-radius:50%;border:2px solid var(--bg2);flex-shrink:0}
+.cf-ms-tip{position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:4px 8px;font-size:9px;font-family:var(--font-m);color:var(--text2);white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;z-index:10;box-shadow:var(--shadow-sm)}
+.cf-ms-marker:hover .cf-ms-tip{opacity:1}
+.divider{height:1px;background:var(--border);margin:14px 0}
+.mc-mode-toggle{display:flex;gap:2px;background:var(--input-bg);border:1px solid var(--border);border-radius:10px;padding:3px;margin-bottom:16px}
+.mc-mode-btn{padding:5px 14px;border-radius:8px;border:none;background:transparent;color:var(--text3);font-size:11px;font-family:var(--font-b);font-weight:600;cursor:pointer;transition:var(--t)}
+.mc-mode-btn.active{background:var(--surface);color:var(--accent);box-shadow:var(--shadow-sm)}
+.editable-tax-row input{width:100%;background:transparent;border:none;color:inherit;font-family:inherit;font-size:inherit;padding:0;outline:none}
+.editable-tax-row input:focus{background:var(--input-bg);border-radius:4px;padding:2px 4px}
+@media(max-width:1050px){.grid-4{grid-template-columns:1fr 1fr}.grid-3{grid-template-columns:1fr 1fr}}
+@media(max-width:700px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}.sidebar{width:200px;min-width:200px}}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" id="modal-box">
+    <div class="modal-header"><span class="modal-title" id="modal-title">Edit</span><div class="modal-close" onclick="closeModalForce()">✕</div></div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-footer" id="modal-footer"></div>
+  </div>
+</div>
+
+<div class="app">
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-flame"><div class="logo-icon">🔥</div><span class="logo-text">FIRE Starter</span></div>
+    <div class="logo-sub">Financial Independence</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Overview</div>
+    <div class="nav-item active" onclick="showView('dashboard')"><span class="nav-icon">◈</span>Dashboard</div>
+    <div class="nav-item" onclick="showView('networth')"><span class="nav-icon">📈</span>Net Worth</div>
+    <div class="nav-section-label">Planning</div>
+    <div class="nav-item" onclick="showView('profile')"><span class="nav-icon">⚙</span>My Profile</div>
+    <div class="nav-item" onclick="showView('income')"><span class="nav-icon">💷</span>Income &amp; Expenses</div>
+    <div class="nav-item" onclick="showView('assets')"><span class="nav-icon">🏛</span>Assets &amp; Debts</div>
+    <div class="nav-item" onclick="showView('investments')"><span class="nav-icon">📊</span>Investments</div>
+    <div class="nav-section-label">Analysis</div>
+    <div class="nav-item" onclick="showView('montecarlo')"><span class="nav-icon">🎲</span>Monte Carlo</div>
+    <div class="nav-item" onclick="showView('scenarios')"><span class="nav-icon">⚡</span>Scenarios</div>
+    <div class="nav-item" onclick="showView('cashflow')"><span class="nav-icon">⟲</span>Cash Flow</div>
+    <div class="nav-item" onclick="showView('tax')"><span class="nav-icon">🏷</span>Tax Analysis</div>
+    <div class="nav-section-label">Milestones</div>
+    <div class="nav-item" onclick="showView('milestones')"><span class="nav-icon">🎯</span>Life Events</div>
+    <div class="nav-item" onclick="showView('estate')"><span class="nav-icon">🏛</span>Estate &amp; Legacy</div>
+    <div class="nav-section-label">Tracking</div>
+    <div class="nav-item" onclick="showView('progress')"><span class="nav-icon">📋</span>Progress Log</div>
+    <div class="nav-item" onclick="showView('export')"><span class="nav-icon">⬇</span>Export / Import</div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="fire-card">
+      <div class="fire-label">FIRE Number</div>
+      <div class="fire-value" id="fire-number-display">£0</div>
+      <div class="fire-sub" id="fire-age-display">Loading...</div>
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="topbar-title">Dashboard</div>
+    <div class="topbar-meta" id="topbar-year">Projection to age 90</div>
+    <button class="btn" onclick="recalculate()">↻ Recalculate</button>
+    <button class="btn primary" onclick="showView('profile')">+ Edit Profile</button>
+    <div class="theme-wrap">
+      <span class="theme-lbl" id="theme-lbl">Dark</span>
+      <div class="theme-toggle" onclick="toggleTheme()"></div>
+    </div>
+  </div>
+  <div class="content">
+
+  <!-- DASHBOARD -->
+  <div class="view active" id="view-dashboard">
+    <div class="grid-4 mb" style="grid-template-columns:repeat(5,1fr)">
+      <div class="kpi green"><div class="kpi-header"><div class="kpi-label">Net Worth</div><span class="kpi-info" onclick="showInfo('networth')">i</span></div><div class="kpi-value" id="kpi-networth">£0</div><div class="kpi-sub">Investments + assets − debts</div></div>
+      <div class="kpi amber"><div class="kpi-header"><div class="kpi-label">FIRE Target</div><span class="kpi-info" onclick="showInfo('fireTarget')">i</span></div><div class="kpi-value" id="kpi-fire">£0</div><div class="kpi-sub" id="kpi-fire-sub">SWR × inflated expenses</div></div>
+      <div class="kpi blue"><div class="kpi-header"><div class="kpi-label">Monthly Surplus</div><span class="kpi-info" onclick="showInfo('surplus')">i</span></div><div class="kpi-value" id="kpi-savings">£0</div><div class="kpi-sub" id="kpi-savings-rate">— savings rate</div></div>
+      <div class="kpi purple"><div class="kpi-header"><div class="kpi-label">FIRE Age</div><span class="kpi-info" onclick="showInfo('fireAge')">i</span></div><div class="kpi-value" id="kpi-fire-age">—</div><div class="kpi-sub" id="kpi-years-to-fire">— years away</div></div>
+      <div class="kpi" id="kpi-liquid-runout" style="border-top:3px solid var(--teal)"><div class="kpi-header"><div class="kpi-label">Liquid Cash Runway</div><span class="kpi-info" onclick="showInfo('liquidRunout')">i</span></div><div class="kpi-value" id="kpi-runout-val" style="font-size:20px">—</div><div class="kpi-sub" id="kpi-runout-sub">ISA + GIA + Cash accounts</div></div>
+    </div>
+    <div class="grid-2">
+      <div class="panel"><div class="panel-header"><span>📈</span><span class="panel-title">Net Worth Projection</span><span class="badge green" id="badge-success-rate">—% likely</span></div><div class="panel-body"><div class="chart-container" style="height:240px"><canvas id="chart-networth-main"></canvas></div></div></div>
+      <div class="panel"><div class="panel-header"><span>💷</span><span class="panel-title">Annual Cash Flow</span></div><div class="panel-body"><div class="chart-container" style="height:240px"><canvas id="chart-cashflow-main"></canvas></div></div></div>
+    </div>
+    <div class="grid-3">
+      <div class="panel"><div class="panel-header"><span>🥧</span><span class="panel-title">Portfolio Allocation</span></div><div class="panel-body"><div class="chart-container" style="height:175px"><canvas id="chart-allocation"></canvas></div></div></div>
+      <div class="panel"><div class="panel-header"><span>🏷</span><span class="panel-title">Tax Breakdown</span></div><div class="panel-body"><div class="chart-container" style="height:175px"><canvas id="chart-tax-pie"></canvas></div></div></div>
+      <div class="panel">
+        <div class="panel-header"><span>🎯</span><span class="panel-title">FIRE Progress</span><span class="kpi-info" onclick="showInfo('fireProgress')" style="margin-left:auto">i</span></div>
+        <div class="panel-body" style="padding-top:18px">
+          <div style="text-align:center;margin-bottom:12px"><div style="font-family:var(--font-d);font-size:36px;font-weight:700;color:var(--accent);line-height:1" id="fire-pct">0%</div><div style="font-size:10px;color:var(--text3);margin-top:4px;font-family:var(--font-m)">of FIRE target reached</div></div>
+          <div class="progress-bar" style="margin-bottom:8px"><div class="progress-fill" id="fire-progress-fill" style="background:linear-gradient(90deg,var(--accent),var(--accent3));width:0%"></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);font-family:var(--font-m)"><span>£0</span><span id="fire-target-label">£0</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><span>📅</span><span class="panel-title">Year-by-Year Projection</span><span style="flex:1"></span>
+        <div class="tab-list" style="margin:0"><button class="tab-btn active" onclick="setTableRange(10,this)">10yr</button><button class="tab-btn" onclick="setTableRange(20,this)">20yr</button><button class="tab-btn" onclick="setTableRange(999,this)">Full</button></div>
+      </div>
+      <div class="panel-body" style="padding:0;overflow-x:auto">
+        <table class="data-table"><thead><tr><th>Year</th><th>Age</th><th>Net Worth</th><th>Investments</th><th>Income</th><th>ISA (tax-free)</th><th>Pension TF</th><th>Expenses</th><th>Tax</th><th>Surplus</th><th>Inv Return</th><th>Status</th></tr></thead><tbody id="projection-tbody"></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- NET WORTH -->
+  <div class="view" id="view-networth">
+    <div class="grid-4 mb">
+      <div class="kpi green"><div class="kpi-label">Total Assets</div><div class="kpi-value" id="nw-assets">£0</div><div class="kpi-sub">Investments + property + cash</div></div>
+      <div class="kpi red"><div class="kpi-label">Total Liabilities</div><div class="kpi-value" id="nw-liabilities">£0</div></div>
+      <div class="kpi blue"><div class="kpi-label">Net Worth</div><div class="kpi-value" id="nw-net">£0</div></div>
+      <div class="kpi amber"><div class="kpi-label">Projected @ 65</div><div class="kpi-value" id="nw-at65">£0</div></div>
+    </div>
+    <div class="panel"><div class="panel-header"><span>📈</span><span class="panel-title">Net Worth Over Time</span></div><div class="panel-body"><div class="chart-container" style="height:290px"><canvas id="chart-nw-full"></canvas></div></div></div>
+    <div class="grid-2">
+      <div class="panel"><div class="panel-header"><span>📊</span><span class="panel-title">Asset Stack Over Time</span></div><div class="panel-body"><div class="chart-container" style="height:230px"><canvas id="chart-asset-stack"></canvas></div></div></div>
+      <div class="panel"><div class="panel-header"><span>📉</span><span class="panel-title">Debt Payoff Schedule</span></div><div class="panel-body"><div class="chart-container" style="height:230px"><canvas id="chart-debt"></canvas></div></div></div>
+    </div>
+    <!-- Change 5: Liquid cash runway panel -->
+    <div class="panel">
+      <div class="panel-header"><span>💧</span><span class="panel-title">Liquid Asset Runway</span><span class="kpi-info" onclick="showInfo('liquidRunout')" style="margin-left:4px">i</span></div>
+      <div class="panel-body">
+        <div class="chart-container" style="height:200px"><canvas id="chart-liquid-runway"></canvas></div>
+        <div id="liquid-runout-info" style="margin-top:14px;font-size:12px;color:var(--text2)"></div>
+      </div>
+    </div>
+    <!-- Change 2: Debt payoff schedule table -->
+    <div class="panel">
+      <div class="panel-header"><span>📅</span><span class="panel-title">Mortgage &amp; Debt Payoff Dates</span></div>
+      <div class="panel-body" style="padding:0">
+        <table class="data-table"><thead><tr><th>Debt</th><th>Balance</th><th>Rate</th><th>Monthly Pmt</th><th>Payoff Year</th><th>Payoff Age</th><th>Years Remaining</th></tr></thead><tbody id="debt-payoff-tbody"></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROFILE -->
+  <div class="view" id="view-profile">
+    <div class="alert info">ℹ Data is stored in your browser session only. Export to JSON regularly to back up your plan.</div>
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-header"><span>👤</span><span class="panel-title">Personal Details</span></div>
+        <div class="panel-body">
+          <div class="form-row"><div class="form-group"><label class="form-label">Current Age</label><input type="number" class="form-input" id="p-age" value="32" min="18" max="80"></div><div class="form-group"><label class="form-label">Target Retirement Age</label><input type="number" class="form-input" id="p-retire-age" value="55"></div></div>
+          <div class="form-row"><div class="form-group"><label class="form-label">Life Expectancy</label><input type="number" class="form-input" id="p-life-exp" value="90" min="70" max="105"></div><div class="form-group"><label class="form-label">State Pension Age</label><input type="number" class="form-input" id="p-state-pension-age" value="67"></div></div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Tax Regime</label><select class="form-select" id="p-tax-regime"><option value="uk">🇬🇧 United Kingdom</option><option value="us">🇺🇸 United States</option><option value="eu">🇪🇺 EU (25% flat)</option></select></div>
+            <div class="form-group"><label class="form-label">Currency</label><select class="form-select" id="p-currency"><option value="£">£ GBP</option><option value="$">$ USD</option><option value="€">€ EUR</option></select></div>
+          </div>
+          <div class="form-group"><label class="form-label">Monthly State / Social Security Pension</label><input type="number" class="form-input" id="p-state-pension" value="800"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><span>⚙</span><span class="panel-title">Model Assumptions</span></div>
+        <div class="panel-body">
+          <div class="form-row"><div class="form-group"><label class="form-label">Investment Return % p.a.</label><input type="number" class="form-input" id="p-return" value="7" step="0.1"></div><div class="form-group"><label class="form-label">Inflation Rate % p.a.</label><input type="number" class="form-input" id="p-inflation" value="2.5" step="0.1"></div></div>
+          <div class="form-row"><div class="form-group"><label class="form-label">Income Growth % p.a.</label><input type="number" class="form-input" id="p-income-growth" value="3" step="0.1"></div><div class="form-group"><label class="form-label">Safe Withdrawal Rate %<span class="kpi-info" onclick="showInfo('swr')" style="margin-left:4px">i</span></label><input type="number" class="form-input" id="p-swr" value="4" step="0.1"></div></div>
+          <div class="form-row"><div class="form-group"><label class="form-label">Return Volatility σ %<span class="kpi-info" onclick="showInfo('volatility')" style="margin-left:4px">i</span></label><input type="number" class="form-input" id="p-volatility" value="12" step="0.5"></div><div class="form-group"><label class="form-label">Non-Investable Asset Growth %</label><input type="number" class="form-input" id="p-asset-growth" value="3.5" step="0.1"><div class="form-hint">Property, cash etc.</div></div></div>
+          <button class="btn primary" style="width:100%;padding:10px;margin-top:4px" onclick="saveProfile()">✓ Save &amp; Recalculate</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INCOME & EXPENSES -->
+  <div class="view" id="view-income">
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-header"><span>💷</span><span class="panel-title">Income Streams</span><span class="kpi-info" onclick="showInfo('incomeFromAge')" style="margin-left:4px">i</span><button class="btn sm" style="margin-left:auto" onclick="openModal('income')">+ Add</button></div>
+        <div class="panel-body" style="padding:0;overflow-x:auto">
+          <table class="data-table"><thead><tr><th>Name</th><th>Monthly</th><th>Type</th><th>From Age</th><th>Until Age</th><th>Growth</th><th>Actions</th></tr></thead><tbody id="income-tbody"></tbody></table>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><span>🛒</span><span class="panel-title">Expenses</span><button class="btn sm" style="margin-left:auto" onclick="openModal('expense')">+ Add</button></div>
+        <div class="panel-body" style="padding:0;overflow-x:auto">
+          <table class="data-table"><thead><tr><th>Category</th><th>Monthly</th><th>Type</th><th>From Age</th><th>Until Age</th><th>Actions</th></tr></thead><tbody id="expense-tbody"></tbody></table>
+        </div>
+      </div>
+    </div>
+    <div class="panel"><div class="panel-header"><span>📊</span><span class="panel-title">Income vs Expenses Over Time</span></div><div class="panel-body"><div class="chart-container" style="height:250px"><canvas id="chart-inc-exp"></canvas></div></div></div>
+  </div>
+
+  <!-- ASSETS & DEBTS -->
+  <div class="view" id="view-assets">
+    <div class="alert info">ℹ List <strong>Property, Cash and Physical</strong> assets here. Investment portfolios belong in Investments → Accounts — this avoids double-counting net worth.</div>
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-header"><span>🏠</span><span class="panel-title">Non-Investable Assets</span><button class="btn sm" style="margin-left:auto" onclick="openModal('asset')">+ Add</button></div>
+        <div class="panel-body" style="padding:0;overflow-x:auto">
+          <table class="data-table"><thead><tr><th>Asset</th><th>Value</th><th>Growth %</th><th>Type</th><th>Actions</th></tr></thead><tbody id="assets-tbody"></tbody></table>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><span>💳</span><span class="panel-title">Liabilities</span><button class="btn sm" style="margin-left:auto" onclick="openModal('debt')">+ Add</button></div>
+        <div class="panel-body" style="padding:0;overflow-x:auto">
+          <table class="data-table"><thead><tr><th>Name</th><th>Balance</th><th>Interest</th><th>Monthly Pmt</th><th>Actions</th></tr></thead><tbody id="debts-tbody"></tbody></table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INVESTMENTS -->
+  <div class="view" id="view-investments">
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-header"><span>📊</span><span class="panel-title">Portfolio Allocation</span></div>
+        <div class="panel-body">
+          <div id="allocation-sliders"></div>
+          <div class="divider"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><span style="font-size:12px;color:var(--text3)">Blended expected return</span><span class="badge green" id="blended-return-display">7.0%</span></div>
+          <div class="chart-container" style="height:180px"><canvas id="chart-alloc-pie"></canvas></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><span>💰</span><span class="panel-title">Investment Accounts</span><button class="btn sm" style="margin-left:auto" onclick="openModal('account')">+ Add</button></div>
+        <div class="panel-body" style="padding:0;overflow-x:auto">
+        <table class="data-table"><thead><tr><th>Account</th><th>Balance</th><th>Monthly Contrib</th><th>Type</th><th>Return Rate</th><th>Actions</th></tr></thead><tbody id="accounts-tbody"></tbody></table>
+        </div>
+      </div>
+    </div>
+    <div class="panel"><div class="panel-header"><span>📈</span><span class="panel-title">Investment Portfolio Growth</span></div><div class="panel-body"><div class="chart-container" style="height:250px"><canvas id="chart-invest-growth"></canvas></div></div></div>
+  </div>
+
+  <!-- MONTE CARLO -->
+  <div class="view" id="view-montecarlo">
+    <div class="mc-mode-toggle">
+      <button class="mc-mode-btn active" id="mc-btn-random" onclick="setMCMode('random')">🎲 Randomised</button>
+      <button class="mc-mode-btn" id="mc-btn-historical" onclick="setMCMode('historical')">📜 Historical Regimes</button>
+      <button class="mc-mode-btn" id="mc-btn-stress" onclick="setMCMode('stress')">💥 Stress Tests</button>
+    </div>
+    <div id="mc-info-box" class="alert info" style="margin-bottom:14px"></div>
+    <div class="grid-4 mb">
+      <div class="kpi green"><div class="kpi-header"><div class="kpi-label">Success Rate</div><span class="kpi-info" onclick="showInfo('successRate')">i</span></div><div class="kpi-value" id="mc-success">—%</div><div class="kpi-sub">Simulations reaching FIRE target</div></div>
+      <div class="kpi blue"><div class="kpi-label">Median @ FIRE Age</div><div class="kpi-value" id="mc-median">£0</div></div>
+      <div class="kpi amber"><div class="kpi-header"><div class="kpi-label">10th Percentile</div><span class="kpi-info" onclick="showInfo('p10')">i</span></div><div class="kpi-value" id="mc-p10">£0</div><div class="kpi-sub">Adverse scenario</div></div>
+      <div class="kpi purple"><div class="kpi-label">90th Percentile</div><div class="kpi-value" id="mc-p90">£0</div><div class="kpi-sub">Favourable scenario</div></div>
+    </div>
+    <div class="grid-2">
+      <div class="panel"><div class="panel-header"><span>📊</span><span class="panel-title">Outcome Distribution</span></div><div class="panel-body"><div class="chart-container" style="height:270px"><canvas id="chart-mc-dist"></canvas></div></div></div>
+      <div class="panel"><div class="panel-header"><span>📈</span><span class="panel-title">Fan Chart — Percentile Paths</span></div><div class="panel-body"><div class="chart-container" style="height:270px"><canvas id="chart-mc-fan"></canvas></div></div></div>
+    </div>
+    <div class="panel"><div class="panel-header"><span>🔧</span><span class="panel-title">Sensitivity Analysis — Net Worth Change at Retirement</span></div><div class="panel-body"><div class="chart-container" style="height:210px"><canvas id="chart-sensitivity"></canvas></div></div></div>
+  </div>
+
+  <!-- SCENARIOS -->
+  <div class="view" id="view-scenarios">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;align-items:center">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;flex:1" id="scenario-cards"></div>
+      <button class="btn primary" onclick="openModal('scenario')">+ Add Scenario</button>
+    </div>
+    <div class="panel"><div class="panel-header"><span>⚡</span><span class="panel-title">Net Worth Comparison Over Time</span></div><div class="panel-body"><div class="chart-container" style="height:290px"><canvas id="chart-scenarios"></canvas></div></div></div>
+    <div class="grid-2">
+      <div class="panel"><div class="panel-header"><span>📊</span><span class="panel-title">FIRE Age by Scenario</span></div><div class="panel-body"><div class="chart-container" style="height:210px"><canvas id="chart-scenario-fireage"></canvas></div></div></div>
+      <div class="panel"><div class="panel-header"><span>📋</span><span class="panel-title">Scenario Summary</span></div><div class="panel-body" style="padding:0;overflow-x:auto"><table class="data-table"><thead><tr><th>Scenario</th><th>FIRE Age</th><th>Net Worth</th><th>Drawdown/mo</th><th>Outcome</th></tr></thead><tbody id="scenario-tbody"></tbody></table></div></div>
+    </div>
+  </div>
+
+  <!-- CASH FLOW -->
+  <div class="view" id="view-cashflow">
+    <!-- KPI row -->
+    <div class="grid-4 mb" id="cf-kpi-grid">
+      <div class="kpi green"><div class="kpi-label">Annual Income</div><div class="kpi-value" id="cf-income">£0</div><div class="kpi-sub" id="cf-income-sub">at current age</div></div>
+      <div class="kpi red"><div class="kpi-label">Annual Expenses</div><div class="kpi-value" id="cf-expenses">£0</div></div>
+      <div class="kpi amber"><div class="kpi-label">Annual Tax</div><div class="kpi-value" id="cf-tax">£0</div><div class="kpi-sub" id="cf-tax-sub">effective rate —%</div></div>
+      <div class="kpi blue"><div class="kpi-label">Net Surplus / Deficit</div><div class="kpi-value" id="cf-surplus">£0</div><div class="kpi-sub" id="cf-surplus-sub"></div></div>
+    </div>
+
+    <!-- Timeline scrubber panel -->
+    <div class="panel">
+      <div class="panel-header">
+        <span>🕐</span>
+        <span class="panel-title">Cash Flow Timeline</span>
+        <span style="margin-left:auto;font-size:11px;color:var(--text3);font-family:var(--font-m)" id="cf-timeline-label">Age — · Year —</span>
+      </div>
+      <div class="panel-body" style="padding:14px 20px 10px">
+        <!-- Phase strip -->
+        <div style="position:relative;height:28px;margin-bottom:10px;border-radius:6px;overflow:hidden;background:var(--border)" id="cf-phase-strip"></div>
+        <!-- Milestone markers -->
+        <div style="position:relative;height:18px;margin-bottom:8px" id="cf-milestone-markers"></div>
+        <!-- Slider -->
+        <input type="range" id="cf-age-slider" min="0" max="100" value="0"
+          style="width:100%;margin-bottom:4px"
+          oninput="onCFSlider(this.value)">
+        <!-- Age labels -->
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);font-family:var(--font-m)" id="cf-age-labels"></div>
+      </div>
+    </div>
+
+    <!-- Sankey diagram panel -->
+    <div class="panel">
+      <div class="panel-header">
+        <span>🌊</span>
+        <span class="panel-title">Cash Flow Sankey</span>
+        <span id="cf-sankey-phase" class="badge" style="margin-left:6px"></span>
+        <span id="cf-deficit-flag" style="display:none;margin-left:8px;font-size:11px;font-weight:700;color:var(--red)">⚠ PORTFOLIO DRAWDOWN</span>
+      </div>
+      <div class="panel-body" style="padding:10px 16px">
+        <div id="cf-sankey-container" style="width:100%;overflow-x:auto">
+          <svg id="cf-sankey-svg" style="display:block;min-width:620px;width:100%" height="380"></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Year-by-year cash flow chart -->
+    <div class="panel">
+      <div class="panel-header"><span>📊</span><span class="panel-title">Income, Expenses &amp; Tax — Lifetime View</span></div>
+      <div class="panel-body"><div class="chart-container" style="height:240px"><canvas id="chart-cashflow-lifetime"></canvas></div></div>
+    </div>
+
+    <!-- Side by side breakdown pies (for selected year) -->
+    <div class="grid-2">
+      <div class="panel"><div class="panel-header"><span>💷</span><span class="panel-title">Income Sources</span><span style="font-size:11px;color:var(--text3);font-family:var(--font-m);margin-left:4px" id="cf-pie-age-label">(age —)</span></div><div class="panel-body"><div class="chart-container" style="height:200px"><canvas id="chart-income-breakdown"></canvas></div></div></div>
+      <div class="panel"><div class="panel-header"><span>🛒</span><span class="panel-title">Expense Categories</span></div><div class="panel-body"><div class="chart-container" style="height:200px"><canvas id="chart-expense-breakdown"></canvas></div></div></div>
+    </div>
+  </div>
+
+  <!-- TAX -->
+  <div class="view" id="view-tax">
+    <div class="alert warning">⚠ Simplified estimates only — consult a qualified tax adviser for personalised guidance.</div>
+    <!-- Change 3+4: ISA/Pension breakdown -->
+    <div class="panel" style="margin-bottom:18px">
+      <div class="panel-header"><span>💡</span><span class="panel-title">Income Tax Breakdown by Source</span><span class="kpi-info" onclick="showInfo('taxBreakdown')" style="margin-left:4px">i</span></div>
+      <div class="panel-body"><div id="tx-breakdown"></div></div>
+    </div>
+    <div class="grid-4 mb">
+      <div class="kpi amber"><div class="kpi-label">Income Tax</div><div class="kpi-value" id="tx-income">£0</div></div>
+      <div class="kpi amber"><div class="kpi-label">National Insurance</div><div class="kpi-value" id="tx-ni">£0</div></div>
+      <div class="kpi amber"><div class="kpi-label">Capital Gains (est.)</div><div class="kpi-value" id="tx-cgt">£0</div></div>
+      <div class="kpi green"><div class="kpi-header"><div class="kpi-label">Effective Rate</div><span class="kpi-info" onclick="showInfo('effectiveRate')">i</span></div><div class="kpi-value" id="tx-effective">0%</div></div>
+    </div>
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-header"><span>🏷</span><span class="panel-title">Tax Band Analysis</span><span class="kpi-info" onclick="showInfo('taxBands')" style="margin-left:4px">i</span><button class="btn sm" style="margin-left:auto" onclick="addTaxBand()">+ Band</button><button class="btn sm danger" style="margin-left:6px" onclick="resetTaxBands()">Reset</button></div>
+        <div class="panel-body" style="padding:0">
+          <table class="data-table"><thead><tr><th>Band</th><th>Rate %</th><th>Lower (£)</th><th>Upper (£)</th><th>Tax in Band</th><th>Cumulative</th><th></th></tr></thead><tbody id="tax-brackets-tbody"></tbody></table>
+        </div>
+      </div>
+      <div class="panel"><div class="panel-header"><span>📈</span><span class="panel-title">Tax Burden Over Time</span></div><div class="panel-body"><div class="chart-container" style="height:230px"><canvas id="chart-tax-timeline"></canvas></div></div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><span>🏷</span><span class="panel-title">National Insurance Bands (2024/25)</span><button class="btn sm danger" style="margin-left:auto" onclick="resetNIBands()">Reset NI</button></div>
+      <div class="panel-body" style="padding:0">
+        <table class="data-table"><thead><tr><th>Band</th><th>Rate %</th><th>Lower (£)</th><th>Upper (£)</th><th>NI in Band</th><th></th></tr></thead><tbody id="ni-brackets-tbody"></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- MILESTONES -->
+  <div class="view" id="view-milestones">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:14px"><button class="btn primary" onclick="openModal('milestone')">+ Add Milestone / Transaction</button></div>
+    <div class="panel"><div class="panel-header"><span>🎯</span><span class="panel-title">Life Events &amp; Transactions</span></div><div class="panel-body" style="padding:0"><table class="data-table"><thead><tr><th>Name</th><th>Type</th><th>Trigger</th><th>Value</th><th>Impact</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead><tbody id="milestones-tbody"></tbody></table></div></div>
+    <div class="panel"><div class="panel-header"><span>📅</span><span class="panel-title">Visual Timeline</span></div><div class="panel-body"><div id="timeline-view" style="padding:6px 0"></div></div></div>
+  </div>
+
+  <!-- ESTATE -->
+  <div class="view" id="view-estate">
+    <div class="grid-4 mb">
+      <div class="kpi green"><div class="kpi-label">Projected Estate</div><div class="kpi-value" id="es-estate">£0</div></div>
+      <div class="kpi red"><div class="kpi-header"><div class="kpi-label">IHT Estimate</div><span class="kpi-info" onclick="showInfo('iht')">i</span></div><div class="kpi-value" id="es-iht">£0</div></div>
+      <div class="kpi blue"><div class="kpi-label">Net to Heirs</div><div class="kpi-value" id="es-heirs">£0</div></div>
+      <div class="kpi teal"><div class="kpi-header"><div class="kpi-label">Legacy Goal Status</div><span class="kpi-info" onclick="showInfo('legacyGoal')">i</span></div><div class="kpi-value" id="es-goal-status">—</div><div class="kpi-sub" id="es-goal-sub"></div></div>
+    </div>
+    <div class="grid-2">
+      <div class="panel"><div class="panel-header"><span>📈</span><span class="panel-title">Estate &amp; Legacy Projection</span></div><div class="panel-body"><div class="chart-container" style="height:250px"><canvas id="chart-estate"></canvas></div></div></div>
+      <div class="panel">
+        <div class="panel-header"><span>⚙</span><span class="panel-title">Estate &amp; Legacy Settings</span></div>
+        <div class="panel-body">
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Legacy Target (£)</label><input type="number" class="form-input" id="es-legacy-target" value="0" oninput="updateEstate()"><div class="form-hint">Amount you want to leave heirs</div></div>
+            <div class="form-group"><label class="form-label">Measure at Age</label><input type="number" class="form-input" id="es-legacy-age" value="85" oninput="updateEstate()"><div class="form-hint">Age to assess legacy goal</div></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Additional Legacy Gift (£)</label><input type="number" class="form-input" id="es-gift" value="0" oninput="updateEstate()"></div>
+            <div class="form-group"><label class="form-label">Charitable Donation % of Estate</label><input type="number" class="form-input" id="es-charity" value="0" max="100" oninput="updateEstate()"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">IHT Nil-Rate Band (£)</label>
+            <input type="number" class="form-input" id="es-nil-rate" value="325000" oninput="updateEstate()">
+            <div class="form-hint">Current UK: £325,000. Up to £500,000 with RNRB for main home.</div>
+          </div>
+          <div class="divider"></div>
+          <div id="es-legacy-advice" class="info-panel" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+    <div class="panel"><div class="panel-header"><span>📊</span><span class="panel-title">Legacy-Adjusted Drawdown Impact</span><span class="kpi-info" onclick="showInfo('legacyDrawdown')" style="margin-left:4px">i</span></div><div class="panel-body"><div class="chart-container" style="height:200px"><canvas id="chart-estate-drawdown"></canvas></div></div></div>
+  </div>
+
+  <!-- PROGRESS -->
+  <div class="view" id="view-progress">
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-header"><span>📋</span><span class="panel-title">Log Net Worth Entry</span></div>
+        <div class="panel-body">
+          <div class="form-row"><div class="form-group"><label class="form-label">Date</label><input type="date" class="form-input" id="log-date"></div><div class="form-group"><label class="form-label">Net Worth</label><input type="number" class="form-input" id="log-networth" placeholder="e.g. 125000"></div></div>
+          <div class="form-group"><label class="form-label">Notes</label><input type="text" class="form-input" id="log-notes" placeholder="Optional note..."></div>
+          <button class="btn primary" style="margin-top:4px" onclick="addProgressEntry()">+ Log Entry</button>
+        </div>
+      </div>
+      <div class="panel"><div class="panel-header"><span>📈</span><span class="panel-title">Actual vs Projected</span></div><div class="panel-body"><div class="chart-container" style="height:195px"><canvas id="chart-progress"></canvas></div></div></div>
+    </div>
+    <div class="panel"><div class="panel-header"><span>📅</span><span class="panel-title">Progress History</span></div><div class="panel-body" style="padding:0"><table class="data-table"><thead><tr><th>Date</th><th>Net Worth</th><th>vs Projection</th><th>Notes</th><th></th></tr></thead><tbody id="progress-tbody"></tbody></table></div></div>
+  </div>
+
+  <!-- EXPORT -->
+  <div class="view" id="view-export">
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-header"><span>⬇</span><span class="panel-title">Export Data</span></div>
+        <div class="panel-body">
+          <p style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.8">Export a complete backup as JSON (re-importable, includes custom tax bands) or the full projection as CSV.</p>
+          <div class="form-group" style="margin-bottom:14px">
+            <label class="form-label">File Name</label>
+            <input type="text" class="form-input" id="export-filename" value="fire-starter-plan" placeholder="e.g. my-fire-plan-2025">
+            <div class="form-hint">Extension (.json / .csv) added automatically</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <button class="btn primary" onclick="exportJSON()" style="justify-content:center">💾 Export Full Plan as JSON</button>
+            <button class="btn" onclick="exportCSV()" style="justify-content:center">📊 Export Projection as CSV</button>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><span>⬆</span><span class="panel-title">Import / Restore</span></div>
+        <div class="panel-body">
+          <p style="font-size:13px;color:var(--text2);margin-bottom:18px;line-height:1.8">Load a previously exported JSON plan. All data including custom tax bands will be restored and the model recalculates immediately.</p>
+          <input type="file" id="import-file" accept=".json" style="display:none" onchange="importJSON(event)">
+          <button class="btn primary" onclick="document.getElementById('import-file').click()" style="justify-content:center;width:100%;margin-bottom:18px">📂 Load JSON Plan File</button>
+          <div class="divider"></div>
+          <p style="font-size:12px;color:var(--text3);margin-bottom:10px">⚠ Resets all data to built-in demo values.</p>
+          <button class="btn danger" onclick="resetData()" style="justify-content:center;width:100%">🗑 Reset to Demo Defaults</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  </div><!-- /content -->
+</main>
+</div><!-- /app -->
+<script>
+'use strict';
+// =========================================================
+// THEME
+// =========================================================
+let currentTheme = 'dark';
+function toggleTheme() {
+  currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', currentTheme);
+  document.getElementById('theme-lbl').textContent = currentTheme === 'dark' ? 'Dark' : 'Light';
+  setTimeout(updateCharts, 60);
+}
+
+// =========================================================
+// INFO / EXPLANATION SYSTEM
+// =========================================================
+const INFO_DEFS = {
+  networth: {
+    title: 'Net Worth',
+    what: 'Your total financial position: everything you own minus everything you owe. Includes investment accounts, property, cash, and physical assets, minus all debts.',
+    interpret: 'Positive = you own more than you owe. Track this over time — consistent growth means you\'re building wealth. A negative number means debts exceed assets.',
+    calc: 'Net Worth = Sum of all investment account balances + Sum of all non-investable asset values − Sum of all debt balances.',
+    assumptions: 'Uses current balances as entered. Does not apply any growth or inflation — this is a point-in-time snapshot.'
+  },
+  fireTarget: {
+    title: 'FIRE Target',
+    what: 'The total investment portfolio value you need to retire and sustain your lifestyle indefinitely using the Safe Withdrawal Rate (SWR).',
+    interpret: 'This is your "finish line". Once your investable portfolio reaches this number, withdrawals at the SWR rate should cover your expenses for the rest of your life.',
+    calc: 'FIRE Target = (Annual Expenses at Retirement) ÷ Safe Withdrawal Rate. Annual expenses are inflated forward from today to your target retirement age.',
+    assumptions: 'Based on the SWR you set (default 4%). Expenses are inflated at your inflation assumption. Assumes you want to fund expenses indefinitely from portfolio returns only (excluding state pension, which extends runway).'
+  },
+  surplus: {
+    title: 'Monthly Surplus',
+    what: 'The money left over each month after all taxes, essential expenses, and debt payments. This is your raw capacity to save and invest.',
+    interpret: 'A higher surplus accelerates your path to FIRE. Ideally this should be consistently positive. A negative surplus means you\'re spending more than you earn after tax.',
+    calc: 'Monthly Surplus = Gross Monthly Income − Income Tax (monthly) − NI (monthly) − All Expenses (active this age) − Debt Payments.',
+    assumptions: 'Uses current income and expenses. Does not account for future income growth or expense changes — those are modelled in the projection.'
+  },
+  fireAge: {
+    title: 'FIRE Age',
+    what: 'The earliest age at which your investable portfolio is projected to reach your FIRE Target, based on current savings rate and investment return assumptions.',
+    interpret: 'Younger = earlier financial independence. "Not reached" means under current assumptions your portfolio never hits the target before life expectancy.',
+    calc: 'Identified by scanning the year-by-year projection to find the first year where Investment Portfolio ≥ FIRE Target.',
+    assumptions: 'Assumes constant savings rate, investment returns as set in Profile. No major life changes unless modelled in milestones or income/expense records.'
+  },
+  fireProgress: {
+    title: 'FIRE Progress',
+    what: 'Shows how far along you are toward your FIRE Target, expressed as a percentage.',
+    interpret: '0% = just starting out. 100% = you\'ve reached FIRE. 25-50% is typically where the compounding effect starts to feel significant.',
+    calc: 'FIRE Progress = (Current Investable Portfolio ÷ FIRE Target) × 100. Capped at 100%.',
+    assumptions: 'Compares today\'s portfolio value to the inflation-adjusted FIRE Target at retirement age.'
+  },
+  swr: {
+    title: 'Safe Withdrawal Rate (SWR)',
+    what: 'The percentage of your portfolio you withdraw each year in retirement without the portfolio running out over a long horizon.',
+    interpret: '4% is the classic "Trinity Study" rate, shown to survive 95%+ of 30-year retirement periods in historical US markets. Lower SWRs (3–3.5%) are more conservative for early retirees with 40+ year horizons.',
+    calc: 'Annual withdrawal = Portfolio × SWR. FIRE Target = Annual Expenses ÷ SWR.',
+    assumptions: 'The 4% rule is based on historical data for a balanced US portfolio (50/50 stocks/bonds). Your mileage may vary depending on portfolio composition, sequence of returns, and geography.'
+  },
+  volatility: {
+    title: 'Return Volatility (σ)',
+    what: 'The standard deviation of annual investment returns. Measures how much annual returns are expected to vary around the mean.',
+    interpret: 'A global equity portfolio typically has σ ≈ 15-20%. A balanced portfolio (60/40) might be 10-12%. Higher σ = more variation in year-to-year returns = wider fan chart in Monte Carlo.',
+    calc: 'Used in Monte Carlo: each simulated year\'s return = blended return + σ × random normal number.',
+    assumptions: 'Returns are assumed to follow a normal distribution. Real returns have fat tails (more extreme events than normal distribution predicts).'
+  },
+  successRate: {
+    title: 'Monte Carlo Success Rate',
+    what: 'The percentage of 1,000 simulated futures in which your portfolio reaches the FIRE target by retirement age.',
+    interpret: '>80% is generally considered comfortable. 60-80% = acceptable with some flexibility. <60% = material risk of not reaching FIRE on current trajectory.',
+    calc: 'Run 1,000 simulations. Each year\'s return = blended return + σ × N(0,1). Count simulations where portfolio ≥ FIRE target at retirement age. Success Rate = (Successes ÷ 1000) × 100.',
+    assumptions: 'Returns are normally distributed (i.i.d.). No mean reversion. Historical regimes mode uses real historical return sequences instead.'
+  },
+  p10: {
+    title: '10th Percentile Outcome',
+    what: 'In 90% of simulated futures, your portfolio at retirement is above this value. It represents a pessimistic-but-realistic scenario.',
+    interpret: 'Think of this as your "bad luck" outcome — markets underperformed for years. Use this to stress-test your plan: can you still retire at this value?',
+    calc: 'Sort all 1,000 simulation outcomes. The 10th percentile is the 100th value from the bottom.',
+    assumptions: 'Assumes same contribution rate and timeline as base case. Does not account for behavioural changes (e.g. you might work longer if markets are bad).'
+  },
+  effectiveRate: {
+    title: 'Effective Tax Rate',
+    what: 'The actual percentage of your total income paid in income tax and NI — across all bands combined.',
+    interpret: 'Always lower than your highest marginal rate because lower income is taxed at lower rates. Useful for comparing real tax burdens across income levels.',
+    calc: 'Effective Rate = (Total Income Tax + NI) ÷ Gross Income × 100.',
+    assumptions: 'Based on current year income as entered. Does not include council tax, VAT, capital gains tax, or any other taxes.'
+  },
+  taxBands: {
+    title: 'Tax Band Analysis (UK 2024/25)',
+    what: 'Breaks down your income tax liability across each HMRC tax band. You can edit the thresholds and rates to reflect future changes or a different tax year.',
+    interpret: 'Tax is calculated incrementally — you pay 0% on the personal allowance, 20% on basic rate income, 40% on higher rate, etc. Only the income in each band is taxed at that rate.',
+    calc: 'For each band: Taxable = min(income, upper) − lower. Tax = Taxable × Rate. The bands are applied sequentially.',
+    assumptions: 'UK 2024/25 bands are used by default: PA £12,570, Basic Rate 20% to £50,270, Higher Rate 40% to £125,140, Additional Rate 45% above. Personal Allowance tapers to zero above £125,140.'
+  },
+  iht: {
+    title: 'Inheritance Tax (IHT)',
+    what: 'A 40% UK tax on the value of your estate above the nil-rate band when you die. It applies to assets you leave behind.',
+    interpret: 'IHT only applies if your estate exceeds the nil-rate band (£325k, or up to £500k with the Residence Nil-Rate Band for a main home left to direct descendants).',
+    calc: 'IHT = max(0, (Estate − Nil-Rate Band − Gifts) × 40%) × (1 − Charitable %). Estate = Net Worth at end of projection.',
+    assumptions: 'Uses a flat nil-rate band as set (default £325k). Does not model taper relief, business property relief, or complex trust structures.'
+  },
+  legacyGoal: {
+    title: 'Legacy Goal',
+    what: 'A target amount you want to leave to heirs or charity at a specific age. Setting this affects how the model suggests you adjust your drawdown rate.',
+    interpret: 'If the projected estate at your legacy age exceeds the target, you\'re on track. If it\'s below, you may need to reduce spending in retirement.',
+    calc: 'Compares projected net worth at the "measure at age" year to the legacy target. Shows surplus or shortfall.',
+    assumptions: 'Based on the baseline projection. Does not optimise drawdown automatically — shows impact of legacy constraint on annual spending capacity.'
+  },
+  legacyDrawdown: {
+    title: 'Legacy-Adjusted Drawdown',
+    what: 'Shows how much annual income you can sustainably withdraw from your portfolio while still meeting your legacy target.',
+    interpret: 'The blue line shows unconstrained drawdown capacity. The green line shows legacy-constrained drawdown. The gap represents the cost of preserving wealth for heirs.',
+    calc: 'Legacy-constrained drawdown = (Portfolio − Legacy Target PV) × SWR. Present value of legacy target is discounted at the investment return rate.',
+    assumptions: 'Assumes constant SWR drawdown. Does not model dynamic spending strategies (e.g. floor-and-upside). State pension and other income is not included here.'
+  },
+  incomeFromAge: {
+    title: 'Income "From Age" Field',
+    what: 'Allows you to schedule income streams that start at a future age — essential for modelling pension drawdown, ISA drawdown, annuities, or deferred salary that begins later.',
+    interpret: 'Set From Age = 57 for pension drawdown (UK minimum access age from 2028), From Age = 55 for ISA withdrawals, From Age = 67 for state pension, etc. Income is only included in years where age ≥ From Age AND age < Until Age.',
+    calc: 'In each projection year, income is summed only for streams where fromAge ≤ current age < untilAge.',
+    assumptions: 'Income amounts are in today\'s money and inflated at the income growth rate. Drawdown income from portfolios reduces investable assets — model this by adding a corresponding investment account withdrawal.'
+  },
+  liquidRunout: {
+    title: 'Liquid Asset Runway',
+    what: 'Tracks when your easily-accessible accounts (ISA, GIA, Cash/Money Market) are projected to run out under your drawdown plan.',
+    interpret: 'If liquid assets run out before you can access pensions (minimum access age 57 from 2028 in UK), you face a gap where you may need to sell illiquid assets. Aim for at least 2 years of expenses in liquid accounts. A "Never runs out" result means liquid assets are sustained throughout.',
+    calc: 'Liquid balance = sum of ISA + GIA + Cash account balances projected each year. Runout = first projected year the balance drops to £0 or below.',
+    assumptions: 'Drawdown assumed proportional across all accounts. Optimal sequencing (ISA first, then GIA, then pension) can extend tax-efficient runway significantly compared to this model.'
+  },
+  taxBreakdown: {
+    title: 'Income Tax by Source',
+    what: 'Shows how income is split across ISA withdrawals (fully tax-free), pension drawdown (25% PCLS tax-free, 75% taxable), and other income sources (employment, rental — fully taxable).',
+    interpret: 'ISA income carries zero tax. Strategic use of ISA drawdown in early retirement before state pension begins can keep you in the basic rate band and avoid IHT. Mixing pension and ISA drawdown optimally is one of the most impactful retirement tax planning decisions.',
+    calc: 'ISA Drawdown: 0% tax. Pension: 25% of each payment is tax-free (Pension Commencement Lump Sum applied on drawdown basis). Remaining 75% + employment/rental income = taxable, subject to UK bands.',
+    assumptions: 'HMRC 2024/25: Lump Sum Allowance (was Lifetime Allowance) = £268,275. This model applies 25% tax-free to each pension payment. Actual PCLS strategy (take all upfront vs spread) depends on individual circumstances. NI is not charged on pension or ISA income, or above State Pension Age.'
+  },
+  rentalProperty: {
+    title: 'Rental Property Returns',
+    what: 'Rental properties generate two types of return: capital growth (property value appreciating over time) and rental yield (net income from tenants). Both should be captured in the custom return rate.',
+    interpret: 'A property with 3% annual capital growth and 4% net yield has total return ≈ 7%. Rental income is separately taxable — model it as the monthly rental income field, which flows through to the taxable income calculation.',
+    calc: 'Property value grows at the custom return rate. Monthly rental income is inflation-adjusted each year and added to other (taxable) income. Linked mortgage payments stop automatically when the debt is paid off.',
+    assumptions: 'Net rental income is after voids (typically 4-8%), agent fees (8-15%), maintenance, and insurance. Mortgage interest relief is capped at 20% basic rate tax credit (Section 24, for residential landlords). Capital gains on sale should be added as a milestone transaction.'
+  }
+};
+
+let _infoModal = false;
+function showInfo(key) {
+  const def = INFO_DEFS[key];
+  if (!def) return;
+  document.getElementById('modal-title').textContent = 'ℹ ' + def.title;
+  document.getElementById('modal-body').innerHTML = `
+    <div class="info-section"><div class="info-section-label">What it is</div><div class="info-section-text">${def.what}</div></div>
+    <div class="divider"></div>
+    <div class="info-section"><div class="info-section-label">How to interpret</div><div class="info-section-text">${def.interpret}</div></div>
+    <div class="divider"></div>
+    <div class="info-section"><div class="info-section-label">How it's calculated</div><div class="info-section-text">${def.calc}</div></div>
+    <div class="divider"></div>
+    <div class="info-section"><div class="info-section-label">Key assumptions</div><div class="info-section-text">${def.assumptions}</div></div>`;
+  document.getElementById('modal-footer').innerHTML = `<button class="btn primary" onclick="closeModalForce()">Got it</button>`;
+  _infoModal = true;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+// =========================================================
+// UK 2024/25 DEFAULT TAX BANDS
+// =========================================================
+function defaultUKTaxBands() {
+  return [
+    { name: 'Personal Allowance', rate: 0,   lower: 0,      upper: 12570  },
+    { name: 'Basic Rate',         rate: 20,  lower: 12570,  upper: 50270  },
+    { name: 'Higher Rate',        rate: 40,  lower: 50270,  upper: 125140 },
+    { name: 'Additional Rate',    rate: 45,  lower: 125140, upper: 99999999 }
+  ];
+}
+function defaultUKNIBands() {
+  return [
+    { name: 'Below Lower Earnings', rate: 0,  lower: 0,     upper: 12570  },
+    { name: 'Primary Threshold',    rate: 8,  lower: 12570, upper: 50270  },
+    { name: 'Upper Earnings Limit', rate: 2,  lower: 50270, upper: 99999999 }
+  ];
+}
+
+// =========================================================
+// DEFAULT STATE
+// =========================================================
+function getDefaultState() {
+  return {
+    profile: {
+      age: 32, retireAge: 55, lifeExp: 90, taxRegime: 'uk', currency: '£',
+      returnRate: 7, inflation: 2.5, incomeGrowth: 3, swr: 4, volatility: 12,
+      statePensionAge: 67, statePension: 800, assetGrowth: 3.5
+    },
+    // CHANGE 1: income now has fromAge field; type includes drawdown options
+    income: [
+      { id: 1, name: 'Salary',           monthly: 5500, type: 'Employment',     fromAge: 0,  untilAge: 55, growthRate: 3 },
+      { id: 2, name: 'Freelance',         monthly: 800,  type: 'Self-Employment', fromAge: 0,  untilAge: 50, growthRate: 2 },
+      { id: 3, name: 'Pension Drawdown',  monthly: 2200, type: 'Pension Drawdown',fromAge: 57, untilAge: 90, growthRate: 0 },
+      { id: 4, name: 'ISA Drawdown',      monthly: 1000, type: 'ISA Drawdown',    fromAge: 55, untilAge: 67, growthRate: 0 }
+    ],
+    expenses: [
+      { id: 1, name: 'Housing',          monthly: 1200, type: 'Essential',  fromAge: 0,  untilAge: 99 },
+      { id: 2, name: 'Food & Groceries', monthly: 400,  type: 'Essential',  fromAge: 0,  untilAge: 99 },
+      { id: 3, name: 'Transport',        monthly: 250,  type: 'Lifestyle',  fromAge: 0,  untilAge: 75 },
+      { id: 4, name: 'Utilities',        monthly: 200,  type: 'Essential',  fromAge: 0,  untilAge: 99 },
+      { id: 5, name: 'Entertainment',    monthly: 300,  type: 'Lifestyle',  fromAge: 0,  untilAge: 99 },
+      { id: 6, name: 'Healthcare',       monthly: 150,  type: 'Essential',  fromAge: 55, untilAge: 99 }
+    ],
+    assets: [
+      { id: 1, name: 'Primary Residence', value: 320000, growthRate: 3.5, type: 'Property' },
+      { id: 2, name: 'Emergency Fund',    value: 15000,  growthRate: 1.5, type: 'Cash'     }
+    ],
+    debts: [
+      { id: 1, name: 'Mortgage', balance: 220000, interestRate: 3.5, monthlyPayment: 1100 }
+    ],
+    investments: {
+      allocation: [
+        { name: 'Global Equities',   pct: 70, annualReturn: 8   },
+        { name: 'Bonds',             pct: 15, annualReturn: 3.5  },
+        { name: 'Property REITs',    pct: 10, annualReturn: 5    },
+        { name: 'Cash/Money Market', pct: 5,  annualReturn: 1.5  }
+      ],
+      // Each account can have: customReturnRate (overrides blended), isRental flag,
+      // monthlyRentalIncome, linkedDebtId (mortgage linked to this property)
+      accounts: [
+        { id: 1, name: 'Stocks & Shares ISA', balance: 45000, monthlyContrib: 1000, type: 'ISA',     customReturnRate: null, isRental: false, monthlyRentalIncome: 0, linkedDebtId: null },
+        { id: 2, name: 'Workplace Pension',   balance: 28000, monthlyContrib: 600,  type: 'Pension',  customReturnRate: null, isRental: false, monthlyRentalIncome: 0, linkedDebtId: null }
+      ]
+    },
+    // CHANGE 4: milestones now support asset transactions
+    milestones: [
+      { id: 1, name: 'FIRE Date',       trigger: 'age',  value: 55,   type: 'retirement', impact: 'Retire — stop salary, start drawdown', txAmount: 0 },
+      { id: 2, name: 'Mortgage Payoff', trigger: 'year', value: 2042, type: 'debt',        impact: 'Remove £1,100/mo debt payment',        txAmount: 0 },
+      { id: 3, name: 'State Pension',   trigger: 'age',  value: 67,   type: 'income',      impact: 'Add £800/mo state pension',             txAmount: 0 }
+    ],
+    progressLog: [],
+    // CHANGE 5: scenarios now have editable assumptions
+    scenarios: [
+      { id: 1, name: 'Base Case',       retireAge: 55, savingsBoost: 0,    returnAdj: 0, spendMult: 1.0, inflationAdj: 0, swrOverride: null },
+      { id: 2, name: 'Early FIRE (50)', retireAge: 50, savingsBoost: 500,  returnAdj: 0, spendMult: 0.9, inflationAdj: 0, swrOverride: null },
+      { id: 3, name: 'Lean FIRE',       retireAge: 52, savingsBoost: 1000, returnAdj: 0, spendMult: 0.75,inflationAdj: 0, swrOverride: 3.5  },
+      { id: 4, name: 'Fat FIRE',        retireAge: 60, savingsBoost: -300, returnAdj: 0, spendMult: 1.4, inflationAdj: 0, swrOverride: 4.5  }
+    ],
+    // CHANGE 2: custom editable tax bands saved to JSON
+    taxSettings: {
+      ukBands: defaultUKTaxBands(),
+      ukNIBands: defaultUKNIBands()
+    },
+    // CHANGE 6: estate settings in state
+    estateSettings: {
+      legacyTarget: 0,
+      legacyAge: 85,
+      gift: 0,
+      charityPct: 0,
+      nilRateBand: 325000
+    }
+  };
+}
+
+let state = getDefaultState();
+let projection = [];
+let charts = {};
+let tableRange = 10;
+let mcMode = 'random';
+
+// =========================================================
+// HELPERS
+// =========================================================
+const cur   = v => state.profile.currency + fmt(v);
+const fmt   = v => { const a=Math.abs(v); if(a>=1e6) return (v/1e6).toFixed(2)+'M'; if(a>=1e3) return (v/1e3).toFixed(0)+'k'; return Math.round(v).toLocaleString(); };
+const pct   = v => (+v).toFixed(1)+'%';
+const clamp = (v,lo,hi) => Math.min(Math.max(v,lo),hi);
+
+function randNormal() {
+  let u=0,v=0;
+  while(u===0) u=Math.random();
+  while(v===0) v=Math.random();
+  return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+}
+
+function getThemeColors() {
+  const d = currentTheme==='dark';
+  return {
+    accent: d?'#4ade80':'#16a34a', accent2:d?'#86efac':'#22c55e',
+    amber:  d?'#fbbf24':'#d97706', red:    d?'#f87171':'#dc2626',
+    blue:   d?'#60a5fa':'#2563eb', purple: d?'#c084fc':'#7c3aed',
+    teal:   d?'#2dd4bf':'#0d9488',
+    text:   d?'#94b89d':'#3d6147', text2:  d?'#4d7057':'#6b9472',
+    grid:   d?'rgba(74,222,128,0.07)':'rgba(22,163,74,0.09)',
+    tip_bg: d?'#172218':'#ffffff', tip_ttl:d?'#e2f0e6':'#1a2e1e',
+    tip_bdy:d?'#94b89d':'#3d6147', tip_bdr:d?'rgba(74,222,128,0.15)':'rgba(22,163,74,0.2)'
+  };
+}
+
+// =========================================================
+// TAX ENGINE — supports ISA (tax-free) and Pension drawdown (25% PCLS)
+// =========================================================
+// HMRC 2024/25:
+//   - ISA withdrawals: entirely tax-free (no income tax, no NI)
+//   - Pension drawdown PCLS: up to 25% of pension fund, capped at £268,275 lifetime
+//     (Lifetime Allowance abolished April 2024, but Lump Sum Allowance = £268,275 remains)
+//   - Pension drawdown above PCLS: taxed as income
+//   - State pension: taxed as income (no NI above SPA)
+// breakdownIncome: { isa: 0, pensionTaxFree: 0, pensionTaxable: 0, other: 0 }
+// If breakdownIncome not provided, income treated as fully taxable
+
+const PENSION_PCLS_LIFETIME_CAP = 268275; // Lump Sum Allowance 2024/25
+
+function calcTax(income, regime, breakdown = null) {
+  income = Math.max(0, income);
+
+  if (regime === 'uk') {
+    const bands   = state.taxSettings.ukBands;
+    const niBands = state.taxSettings.ukNIBands;
+
+    // Change 3: ISA income is completely tax-free — exclude from taxable income
+    // Change 4: Pension tax-free portion (PCLS already taken as lump sum historically;
+    //           ongoing drawdown: 25% of each withdrawal is tax-free up to lifetime cap)
+    let isaIncome       = breakdown?.isa || 0;
+    let pensionTaxFree  = breakdown?.pensionTaxFree || 0;   // 25% portion
+    let pensionTaxable  = breakdown?.pensionTaxable || 0;   // 75% portion
+    let otherIncome     = breakdown ? breakdown.other : income;
+
+    // Total taxable income = pension taxable + other (excluding ISA and pension tax-free)
+    const taxableIncome = Math.max(0, pensionTaxable + otherIncome);
+
+    // Personal allowance taper: reduce PA by £1 for every £2 over £100,000
+    let pa = 0;
+    const paband = bands.find(b => b.rate === 0);
+    if (paband) pa = paband.upper;
+    const effectivePa = taxableIncome > 100000 ? Math.max(0, pa - (taxableIncome - 100000) / 2) : pa;
+
+    let tax = 0;
+    const adjustedBands = bands.map((b, i) => i === 0 ? { ...b, upper: effectivePa } : b);
+    adjustedBands.forEach(b => {
+      const lo = b.lower, hi = Math.min(b.upper, 99999999);
+      if (taxableIncome > lo) {
+        const inBand = Math.min(taxableIncome, hi) - lo;
+        tax += inBand * (b.rate / 100);
+      }
+    });
+
+    // NI: only on employment/self-employment income (not pension, not ISA, not above SPA)
+    // We approximate NI on 'other' income only
+    let ni = 0;
+    niBands.forEach(b => {
+      if (otherIncome > b.lower) {
+        const inBand = Math.min(otherIncome, b.upper) - b.lower;
+        ni += inBand * (b.rate / 100);
+      }
+    });
+
+    return {
+      income: Math.max(0, tax),
+      ni: Math.max(0, ni),
+      taxableIncome,
+      isaIncome,
+      pensionTaxFree,
+      pensionTaxable
+    };
+  }
+
+  if (regime === 'us') {
+    const bds = [[0,.1],[11000,.12],[44725,.22],[95375,.24],[200000,.32],[383900,.35],[578125,.37]];
+    let tax = 0, rem = income;
+    for (let i = bds.length-1; i >= 0; i--) {
+      if (rem > bds[i][0]) { tax += (rem - bds[i][0]) * bds[i][1]; rem = bds[i][0]; }
+    }
+    return { income: tax, ni: 0, taxableIncome: income, isaIncome: 0, pensionTaxFree: 0, pensionTaxable: 0 };
+  }
+
+  // EU flat
+  return { income: Math.max(0, income - 12000) * 0.25, ni: 0, taxableIncome: income, isaIncome: 0, pensionTaxFree: 0, pensionTaxable: 0 };
+}
+
+// Change 4: Build income breakdown for a given projection year
+// Separates ISA drawdown, pension drawdown (with 25% tax-free), and other income
+function buildIncomeBreakdown(annualIncome, age) {
+  let isaIncome = 0, pensionRaw = 0, otherIncome = 0;
+  state.income.forEach(inc => {
+    const fa = inc.fromAge || 0;
+    const ua = inc.untilAge || 999;
+    if (age >= fa && age < ua) {
+      const yearsSinceStart = Math.max(0, age - fa);
+      const amount = inc.monthly * 12 * Math.pow(1 + ((inc.growthRate || 3) / 100), yearsSinceStart);
+      if (inc.type === 'ISA Drawdown') {
+        isaIncome += amount;
+      } else if (inc.type === 'Pension Drawdown' || inc.type === 'Pension') {
+        pensionRaw += amount;
+      } else {
+        otherIncome += amount;
+      }
+    }
+  });
+  // Add state pension to otherIncome (state pension is taxable income, no NI above SPA)
+  if (age >= state.profile.statePensionAge) otherIncome += state.profile.statePension * 12;
+
+  // Change 4: 25% of pension drawdown is tax-free (PCLS treatment on drawdown basis)
+  // In drawdown, each payment is 25% tax-free / 75% taxable
+  const pensionTaxFree  = pensionRaw * 0.25;
+  const pensionTaxable  = pensionRaw * 0.75;
+
+  return { isa: isaIncome, pensionTaxFree, pensionTaxable, other: otherIncome,
+           total: isaIncome + pensionRaw + otherIncome };
+}
+
+// =========================================================
+// BLENDED RETURN (allocation-weighted)
+// =========================================================
+function blendedReturn() {
+  const alloc = state.investments.allocation;
+  const totalPct = alloc.reduce((s,a)=>s+a.pct,0);
+  if (!totalPct) return 0.07;
+  return alloc.reduce((s,a)=>s+(a.pct/100)*(a.annualReturn/100),0) / (totalPct/100);
+}
+
+// Change 1: Per-account effective return rate
+// Rental properties use customReturnRate (total return = price appreciation + yield)
+// Other accounts: use customReturnRate if set, else blended allocation return
+function accountReturnRate(acct) {
+  if (acct.customReturnRate !== null && acct.customReturnRate !== undefined && acct.customReturnRate !== '') {
+    return parseFloat(acct.customReturnRate) / 100;
+  }
+  return blendedReturn();
+}
+
+// Change 2: Compute mortgage payoff year for a given debt
+function computeDebtPayoffYear(debt) {
+  if (!debt || debt.balance <= 0 || debt.monthlyPayment <= 0) return null;
+  let bal = debt.balance;
+  const yr = new Date().getFullYear();
+  for (let y = 0; y < 50; y++) {
+    if (bal <= 0) return yr + y;
+    const interest = bal * (debt.interestRate / 100);
+    const paid = Math.min(debt.monthlyPayment * 12, bal + interest);
+    bal = Math.max(0, bal + interest - paid);
+  }
+  return null; // not paid off in 50 years
+}
+
+// Change 2: Get auto-excluded debt payments because debt is paid off
+function getDebtPayoffInfo() {
+  return state.debts.map(d => {
+    const payoffYear = computeDebtPayoffYear(d);
+    const payoffAge  = payoffYear ? state.profile.age + (payoffYear - new Date().getFullYear()) : null;
+    return { ...d, payoffYear, payoffAge };
+  });
+}
+
+// =========================================================
+// HISTORICAL MARKET RETURN SEQUENCES (Global equity, nominal %, 1970-2023)
+// Source: MSCI World index combined with UK equity returns
+// =========================================================
+const HIST_RETURNS = [
+  -5,-14,17,24,36,-10,-9,24,22,24,   // 1970-1979
+  28,-8,22,20,27,-4,38,30,21,-8,     // 1980-1989
+  -18,24,7,23,4,35,23,34,25,-16,     // 1990-1999
+  -14,-19,-35,15,16,7,10,-1,-37,32,  // 2000-2009
+  12,-6,16,27,4,1,12,22,-2,29,       // 2010-2019
+  16,19,-18,26,21,18                  // 2020-2025 (est)
+];
+
+const STRESS_SEQUENCES = {
+  '1973-74 Stagflation': [-29,-45],
+  '2000-02 Dot-com Bust': [-14,-19,-35],
+  '2008-09 GFC': [-37,32],
+  '1987 Black Monday Year': [-8],
+  '1929-32 Great Depression': [-14,-42,-40,-35],
+  'COVID-19 (2020)': [-16],
+  '2022 Rate Shock': [-18]
+};
+
+// =========================================================
+// CHANGE 4: Apply milestone transactions in projection
+// =========================================================
+function getMilestoneTxForAge(age, year) {
+  let tx = 0;
+  state.milestones.forEach(m => {
+    if (!m.txAmount || m.txAmount === 0) return;
+    const matches = (m.trigger === 'age' && m.value === age) || (m.trigger === 'year' && m.value === year);
+    if (matches) tx += m.txAmount;
+  });
+  return tx;
+}
+
+// =========================================================
+// PROJECTION ENGINE
+// All 6 changes integrated:
+// 1. Per-account return rates (rental property, custom rates)
+// 2. Mortgage auto-payoff: debt payments stop when balance reaches 0
+// 3. ISA drawdown: tax-free in calcTax
+// 4. Pension 25% PCLS tax-free treatment
+// 5. Liquid cash runout tracking
+// =========================================================
+function buildProjection(ov={}) {
+  const p  = {...state.profile, ...ov};
+  const yr = new Date().getFullYear();
+  const n  = Math.max(1, p.lifeExp - p.age);
+  const rAdj = (ov.returnAdj||0)/100;
+  const inflAdj = (ov.inflationAdj||0)/100;
+  const effectiveSWR = (ov.swrOverride || p.swr) / 100;
+
+  // Change 1: Track each account balance separately for per-account returns
+  let accountBalances = state.investments.accounts.map(a => a.balance);
+
+  // Change 5: Track cash-type accounts separately for liquidity runout
+  // Cash accounts = ISA (liquid) + Cash/Money Market type
+  let liquidCashBalance = state.investments.accounts
+    .filter(a => a.type === 'ISA' || a.type === 'GIA' || a.type === 'Cash')
+    .reduce((s, a) => s + a.balance, 0);
+
+  let nonInvAssets    = state.assets.map(a => ({...a}));
+  let debtBalances    = state.debts.map(d => d.balance);
+
+  let liquidRunoutAge = null; // Change 5
+
+  const proj = [];
+  for (let y = 0; y < n; y++) {
+    const age     = p.age + y;
+    const year    = yr + y;
+    const retired = age >= p.retireAge;
+
+    // --- Income: fromAge AND untilAge both respected ---
+    let annualIncome = 0;
+    let isaAnnual = 0, pensionAnnual = 0, otherAnnual = 0;
+    state.income.forEach(inc => {
+      const fa = inc.fromAge || 0;
+      const ua = inc.untilAge || 999;
+      if (age >= fa && age < ua) {
+        const amount = inc.monthly * 12 * Math.pow(1 + ((inc.growthRate || p.incomeGrowth) / 100), Math.max(0, age - fa));
+        annualIncome += amount;
+        if (inc.type === 'ISA Drawdown') isaAnnual += amount;
+        else if (inc.type === 'Pension Drawdown' || inc.type === 'Pension') pensionAnnual += amount;
+        else otherAnnual += amount;
+      }
+    });
+
+    // Change 1: Add rental income from investment accounts flagged as rental
+    state.investments.accounts.forEach((acct, ai) => {
+      if (acct.isRental && acct.monthlyRentalIncome > 0) {
+        const rentalIncome = acct.monthlyRentalIncome * 12 * Math.pow(1 + p.inflation / 100, y);
+        annualIncome += rentalIncome;
+        otherAnnual  += rentalIncome; // rental income is taxable
+      }
+    });
+
+    // State pension
+    if (age >= p.statePensionAge) {
+      const sp = p.statePension * 12;
+      annualIncome += sp;
+      otherAnnual  += sp;
+    }
+
+    // Change 3+4: Build income breakdown for tax calculation
+    const pensionTaxFree = pensionAnnual * 0.25;
+    const pensionTaxable = pensionAnnual * 0.75;
+    const breakdown = { isa: isaAnnual, pensionTaxFree, pensionTaxable, other: otherAnnual };
+    const taxResult  = calcTax(annualIncome, p.taxRegime, breakdown);
+    const totalTax   = taxResult.income + taxResult.ni;
+    const netIncome  = annualIncome - totalTax;
+
+    // --- Expenses: fromAge and untilAge ---
+    let annualExpenses = 0;
+    state.expenses.forEach(exp => {
+      const fa = exp.fromAge || 0;
+      const ua = exp.untilAge || 99;
+      if (age >= fa && age < ua) {
+        let base = exp.monthly * 12;
+        if (retired) base *= (ov.spendMult || 1);
+        annualExpenses += base * Math.pow(1 + (p.inflation + (inflAdj * 100)) / 100, y);
+      }
+    });
+
+    // Change 2: Debt payments — auto-stop when balance reaches 0 (already tracked in debtBalances)
+    let debtPayment = 0;
+    debtBalances = debtBalances.map((bal, i) => {
+      if (bal <= 0) return 0;
+      const d = state.debts[i];
+      const interest = bal * (d.interestRate / 100);
+      const paid = Math.min(d.monthlyPayment * 12, bal + interest);
+      debtPayment += paid;
+      return Math.max(0, bal + interest - paid);
+    });
+
+    // Milestone transactions
+    const milestoneEffect = getMilestoneTxForAge(age, year);
+
+    // Savings / withdrawal
+    const monthlyContribs = state.investments.accounts.reduce((s, a) => s + a.monthlyContrib, 0);
+    let savings = 0, withdrawal = 0;
+    if (!retired) {
+      savings = netIncome - annualExpenses - debtPayment + (ov.savingsBoost || 0) * 12;
+    } else {
+      // Only withdraw shortfall (income streams cover some expenses)
+      const coveredByIncome = Math.max(0, netIncome - annualExpenses);
+      withdrawal = Math.max(0, annualExpenses - netIncome);
+    }
+
+    // Change 1: Update each account balance with its own return rate
+    let totalInvestPortfolio = 0;
+    let totalInvestReturn    = 0;
+    accountBalances = accountBalances.map((bal, ai) => {
+      const acct = state.investments.accounts[ai];
+      const R = accountReturnRate(acct) + rAdj;
+      const ret = bal * R;
+      totalInvestReturn += ret;
+      let newBal;
+      if (!retired) {
+        newBal = Math.max(0, bal + ret + acct.monthlyContrib * 12 +
+          Math.max(0, (savings - monthlyContribs * 12) * (bal / Math.max(1, accountBalances.reduce((s,b)=>s+b,0))) ));
+      } else {
+        // Withdraw proportionally from each account (simplified)
+        const withdrawShare = bal / Math.max(1, accountBalances.reduce((s,b)=>s+b,0));
+        newBal = Math.max(0, bal + ret - withdrawal * withdrawShare);
+      }
+      newBal += milestoneEffect * (bal / Math.max(1, accountBalances.reduce((s,b)=>s+b,0)));
+      totalInvestPortfolio += newBal;
+      return newBal;
+    });
+    if (accountBalances.length === 0) {
+      totalInvestPortfolio = 0;
+      totalInvestReturn = 0;
+    }
+    const investPortfolio = totalInvestPortfolio;
+    const investReturn    = totalInvestReturn;
+
+    // Change 5: Track liquid cash balance (ISA + GIA + Cash type accounts)
+    let liquidBalance = 0;
+    accountBalances.forEach((bal, ai) => {
+      const acct = state.investments.accounts[ai];
+      if (acct.type === 'ISA' || acct.type === 'GIA' || acct.type === 'Cash') {
+        liquidBalance += bal;
+      }
+    });
+    if (liquidBalance <= 0 && liquidRunoutAge === null && (retired || y > 0)) {
+      liquidRunoutAge = age;
+    }
+
+    // Non-investable assets: each at own rate
+    nonInvAssets = nonInvAssets.map(a => ({
+      ...a, value: a.value * (1 + (a.growthRate || p.assetGrowth) / 100)
+    }));
+    const totalNonInv = nonInvAssets.reduce((s, a) => s + a.value, 0);
+    const totalDebt   = debtBalances.reduce((s, v) => s + v, 0);
+    const netWorth    = investPortfolio + totalNonInv - totalDebt;
+    const totalAssets = investPortfolio + totalNonInv;
+
+    const fireTarget  = annualExpenses * (1 / effectiveSWR);
+    const fireReached = investPortfolio >= fireTarget && investPortfolio > 0;
+
+    proj.push({
+      year, age, netWorth, investPortfolio, totalNonInv, totalAssets, totalDebt,
+      annualIncome, annualExpenses, totalTax, netIncome, pensionTaxFree, pensionTaxable,
+      isaIncome: isaAnnual, taxableIncome: taxResult.taxableIncome,
+      savings: retired ? -withdrawal : savings,
+      withdrawal, debtPayment, investReturn, milestoneEffect,
+      liquidBalance,
+      retired, fireReached, fireTarget
+    });
+  }
+  // Attach runout age to all rows
+  proj.forEach(r => { r.liquidRunoutAge = liquidRunoutAge; });
+  return proj;
+}
+
+function recalculate() { projection=buildProjection(); updateAll(); }
+function updateAll() { updateKPIs();updateCharts();updateTables();updateTax();updateEstate();updateMilestones();updateCashFlowKPIs(); }
+
+// =========================================================
+// KPIs
+// =========================================================
+function updateKPIs() {
+  const p = state.profile;
+  const investNow = state.investments.accounts.reduce((s,a)=>s+a.balance,0);
+  const nonInvNow = state.assets.reduce((s,a)=>s+a.value,0);
+  const debtsNow  = state.debts.reduce((s,d)=>s+d.balance,0);
+  const netWorth  = investNow + nonInvNow - debtsNow;
+
+  const monthlyIncome = state.income.filter(i=>(i.fromAge||0)<=p.age && p.age<(i.untilAge||999)).reduce((s,i)=>s+i.monthly,0);
+  const monthlyExp    = state.expenses.filter(e=>(e.fromAge||0)<=p.age && p.age<(e.untilAge||99)).reduce((s,e)=>s+e.monthly,0);
+  const monthlyDebt   = state.debts.reduce((s,d)=>s+d.monthlyPayment,0);
+  // Use income breakdown so ISA is excluded from tax and pension gets 25% relief
+  const bd = buildIncomeBreakdown(monthlyIncome*12, p.age);
+  const txResult = calcTax(monthlyIncome*12, p.taxRegime, bd);
+  const monthlySurplus = monthlyIncome-(txResult.income+txResult.ni)/12-monthlyExp-monthlyDebt;
+  const savingsRate    = monthlyIncome>0?(monthlySurplus/monthlyIncome)*100:0;
+
+  const annualExpFIRE = (monthlyExp*12)*Math.pow(1+p.inflation/100,p.retireAge-p.age);
+  const fireTarget    = annualExpFIRE*(100/p.swr);
+  const fireRow       = projection.find(r=>r.fireReached);
+  const fireAge       = fireRow?fireRow.age:'—';
+  const yearsToFire   = fireRow?fireRow.age-p.age:'—';
+  const firePct       = clamp((investNow/fireTarget)*100,0,100);
+
+  document.getElementById('kpi-networth').textContent    = cur(netWorth);
+  document.getElementById('kpi-fire').textContent        = cur(fireTarget);
+  document.getElementById('kpi-fire-sub').textContent    = `${p.swr}% SWR × inflated expenses`;
+  document.getElementById('kpi-savings').textContent     = cur(monthlySurplus);
+  document.getElementById('kpi-savings-rate').textContent= pct(savingsRate)+' savings rate';
+  document.getElementById('kpi-fire-age').textContent    = fireAge;
+  document.getElementById('kpi-years-to-fire').textContent = typeof yearsToFire==='number'?yearsToFire+' years away':'Not reached';
+  document.getElementById('fire-number-display').textContent = cur(fireTarget);
+  document.getElementById('fire-age-display').textContent    = fireAge!=='—'?'Age '+fireAge:'Not reached';
+  document.getElementById('fire-pct').textContent            = firePct.toFixed(1)+'%';
+  document.getElementById('fire-progress-fill').style.width  = firePct+'%';
+  document.getElementById('fire-target-label').textContent   = cur(fireTarget);
+  document.getElementById('topbar-year').textContent         = `Projection to age ${p.lifeExp}`;
+  document.getElementById('nw-assets').textContent      = cur(investNow+nonInvNow);
+  document.getElementById('nw-liabilities').textContent = cur(debtsNow);
+  document.getElementById('nw-net').textContent         = cur(netWorth);
+  const at65 = projection.find(r=>r.age===65);
+  document.getElementById('nw-at65').textContent = at65?cur(at65.netWorth):'—';
+
+  // Change 5: Liquid cash runout KPI
+  const runoutAge = projection.length > 0 ? projection[0].liquidRunoutAge : null;
+  const runoutKpi = document.getElementById('kpi-liquid-runout');
+  const runoutVal = document.getElementById('kpi-runout-val');
+  const runoutSub = document.getElementById('kpi-runout-sub');
+  if (runoutVal && runoutSub) {
+    if (runoutAge) {
+      runoutVal.textContent = 'Age ' + runoutAge;
+      runoutSub.textContent = 'Liquid accounts exhausted';
+      if (runoutKpi) runoutKpi.style.setProperty('--kpi-border-color', 'var(--red)');
+    } else {
+      const liquidNow = state.investments.accounts
+        .filter(a => a.type === 'ISA' || a.type === 'GIA' || a.type === 'Cash')
+        .reduce((s,a) => s+a.balance, 0);
+      runoutVal.textContent = liquidNow > 0 ? cur(liquidNow) : '—';
+      runoutSub.textContent = liquidNow > 0 ? 'Never runs out in model' : 'No liquid accounts';
+    }
+  }
+}
+
+// =========================================================
+// CASH FLOW — SANKEY + TIMELINE ENGINE
+// =========================================================
+
+// Build per-year income breakdown detail needed for Sankey
+function getCFDataForAge(age) {
+  const p = state.profile;
+  const row = projection.find(r => r.age === age) || projection[projection.length - 1];
+  if (!row) return null;
+
+  // Rebuild income source detail for this age
+  const incomeSources = [];
+  let totalISA = 0, totalPension = 0, totalOther = 0;
+
+  state.income.forEach(inc => {
+    const fa = inc.fromAge || 0;
+    const ua = inc.untilAge || 999;
+    if (age >= fa && age < ua) {
+      const amt = inc.monthly * 12 * Math.pow(1 + ((inc.growthRate || p.incomeGrowth) / 100), Math.max(0, age - fa));
+      incomeSources.push({ name: inc.name, amount: amt, type: inc.type });
+      if (inc.type === 'ISA Drawdown') totalISA += amt;
+      else if (inc.type === 'Pension Drawdown' || inc.type === 'Pension') totalPension += amt;
+      else totalOther += amt;
+    }
+  });
+
+  // Rental income
+  state.investments.accounts.forEach(a => {
+    if (a.isRental && a.monthlyRentalIncome > 0) {
+      const amt = a.monthlyRentalIncome * 12 * Math.pow(1 + p.inflation / 100, age - p.age);
+      incomeSources.push({ name: a.name + ' (Rental)', amount: amt, type: 'Rental' });
+      totalOther += amt;
+    }
+  });
+
+  // State pension
+  if (age >= p.statePensionAge) {
+    const sp = p.statePension * 12;
+    incomeSources.push({ name: 'State Pension', amount: sp, type: 'State Benefits' });
+    totalOther += sp;
+  }
+
+  // Expenses breakdown
+  const expenseSources = [];
+  state.expenses.forEach(exp => {
+    const fa = exp.fromAge || 0;
+    const ua = exp.untilAge || 99;
+    if (age >= fa && age < ua) {
+      const base = exp.monthly * 12;
+      const inflated = base * Math.pow(1 + p.inflation / 100, age - p.age);
+      expenseSources.push({ name: exp.name, amount: inflated, type: exp.type });
+    }
+  });
+
+  // Tax
+  const pensionTF = totalPension * 0.25;
+  const pensionTx = totalPension * 0.75;
+  const bd = { isa: totalISA, pensionTaxFree: pensionTF, pensionTaxable: pensionTx, other: totalOther };
+  const annInc = totalISA + totalPension + totalOther;
+  const taxResult = calcTax(annInc, p.taxRegime, bd);
+  const incomeTax = taxResult.income;
+  const ni = taxResult.ni;
+  const totalTax = incomeTax + ni;
+
+  const totalIncome = annInc;
+  const totalExpenses = expenseSources.reduce((s, e) => s + e.amount, 0);
+  const netSurplus = totalIncome - totalTax - totalExpenses;
+  const isDeficit = netSurplus < 0;
+  const debtPmt = row.debtPayment || 0;
+
+  return {
+    age, year: row.year, row,
+    incomeSources, expenseSources,
+    totalISA, totalPension, totalPensionTF: pensionTF, totalPensionTx: pensionTx, totalOther,
+    totalIncome, incomeTax, ni, totalTax, totalExpenses,
+    netSurplus, isDeficit, debtPmt,
+    retired: row.retired, fireReached: row.fireReached,
+    investPortfolio: row.investPortfolio, netWorth: row.netWorth,
+    liquidBalance: row.liquidBalance || 0
+  };
+}
+
+// Draw Sankey SVG for given CF data
+function drawSankey(data) {
+  const svg = document.getElementById('cf-sankey-svg');
+  if (!svg || !data) return;
+
+  const c = getThemeColors();
+  const W = svg.parentElement.clientWidth || 700;
+  const H = 380;
+  svg.setAttribute('width', Math.max(620, W));
+  svg.setAttribute('height', H);
+  svg.innerHTML = '';
+
+  const PAD = { top: 18, bot: 18, left: 20, right: 20 };
+  const COL_W = 16;  // node bar width
+  // Column X positions: sources | gross | tax split | net | expenses | surplus/deficit
+  const cols = [PAD.left, W*0.22, W*0.4, W*0.57, W*0.78, W - PAD.right - COL_W];
+  const usableH = H - PAD.top - PAD.bot;
+
+  // Colors
+  const COLOR = {
+    employment: c.accent, isa: c.teal, pension: '#a78bfa', rental: c.amber,
+    other: c.blue, tax: c.amber, ni: `${c.amber}99`,
+    essential: c.red, lifestyle: '#f97316', discretionary: '#fbbf24',
+    surplus: c.accent, deficit: c.red, debt: `${c.red}88`,
+    taxFree: c.teal
+  };
+
+  function typeColor(type) {
+    if (!type) return c.blue;
+    const t = type.toLowerCase();
+    if (t.includes('isa')) return COLOR.isa;
+    if (t.includes('pension')) return COLOR.pension;
+    if (t.includes('rental')) return COLOR.rental;
+    if (t.includes('employment') || t.includes('self')) return COLOR.employment;
+    if (t.includes('state') || t.includes('annuity')) return c.purple;
+    return COLOR.other;
+  }
+  function expColor(type) {
+    const t = (type||'').toLowerCase();
+    if (t.includes('essential')) return COLOR.essential;
+    if (t.includes('lifestyle')) return COLOR.lifestyle;
+    return COLOR.discretionary;
+  }
+
+  // Helper: draw a rounded rect node
+  function node(x, y, h, fill, opacity=1) {
+    const r = Math.min(6, COL_W/2, h/2);
+    const el = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    el.setAttribute('x', x); el.setAttribute('y', y);
+    el.setAttribute('width', COL_W); el.setAttribute('height', Math.max(2, h));
+    el.setAttribute('rx', r); el.setAttribute('fill', fill);
+    el.setAttribute('opacity', opacity);
+    el.setAttribute('class', 'sk-node');
+    svg.appendChild(el);
+    return el;
+  }
+
+  // Helper: draw a cubic bezier flow band
+  function flow(x1, y1, h1, x2, y2, h2, fill, opacity=0.45) {
+    if (h1 < 1 || h2 < 1) return;
+    const mx = (x1 + x2) / 2;
+    const top = `M${x1+COL_W},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`;
+    const bot = `L${x2},${y2+h2} C${mx},${y2+h2} ${mx},${y1+h1} ${x1+COL_W},${y1+h1} Z`;
+    const el = document.createElementNS('http://www.w3.org/2000/svg','path');
+    el.setAttribute('d', top + bot);
+    el.setAttribute('fill', fill); el.setAttribute('opacity', opacity);
+    el.setAttribute('class', 'sk-flow');
+    svg.appendChild(el);
+  }
+
+  // Helper: text label
+  function label(x, y, text, anchor='start', fontSize=10, fill=c.text2, bold=false) {
+    const el = document.createElementNS('http://www.w3.org/2000/svg','text');
+    el.setAttribute('x', x); el.setAttribute('y', y);
+    el.setAttribute('text-anchor', anchor);
+    el.setAttribute('font-size', fontSize);
+    el.setAttribute('fill', fill);
+    el.setAttribute('class', 'sk-label');
+    if (bold) el.setAttribute('font-weight', '700');
+    el.textContent = text;
+    svg.appendChild(el);
+  }
+
+  function fmtK(v) {
+    if (Math.abs(v) >= 1e6) return '£'+(v/1e6).toFixed(1)+'M';
+    if (Math.abs(v) >= 1e3) return '£'+(v/1e3).toFixed(0)+'k';
+    return '£'+Math.round(v);
+  }
+
+  const scale = usableH / Math.max(data.totalIncome, data.totalExpenses + data.totalTax, 1000);
+
+  // ── Column 0: Income sources ──────────────────────────────
+  let y0 = PAD.top;
+  const incomeSourcesFiltered = data.incomeSources.filter(s => s.amount > 0);
+  incomeSourcesFiltered.forEach(src => {
+    const h = src.amount * scale;
+    const col = typeColor(src.type);
+    node(cols[0], y0, h, col);
+    // Label left of node
+    const labelY = y0 + h/2 + 3.5;
+    const truncName = src.name.length > 16 ? src.name.slice(0,14)+'…' : src.name;
+    label(cols[0] - 4, labelY, truncName, 'end', 9.5, c.text2);
+    label(cols[0] - 4, labelY + 11, fmtK(src.amount), 'end', 8.5, c.text3);
+    src._y0 = y0; src._h = h; src._col = col;
+    y0 += h + 2;
+  });
+
+  // ── Column 1: Gross income node ──────────────────────────
+  const grossH = data.totalIncome * scale;
+  const grossY = PAD.top + (usableH - grossH) * 0.1;
+  node(cols[1], grossY, grossH, c.accent, 0.9);
+  label(cols[1] + COL_W/2, grossY - 6, 'Gross Income', 'middle', 9.5, c.text, true);
+  label(cols[1] + COL_W/2, grossY - 6 + 12, fmtK(data.totalIncome), 'middle', 8.5, c.accent);
+
+  // Flows: sources → gross
+  let gyCursor = grossY;
+  incomeSourcesFiltered.forEach(src => {
+    const h = src.amount * scale;
+    flow(cols[0], src._y0, src._h, cols[1], gyCursor, h, src._col, 0.35);
+    gyCursor += h;
+  });
+
+  // ── Column 2: Tax split ───────────────────────────────────
+  // ISA tax-free + pension tax-free → pass through
+  const taxFreeTotal = data.totalISA + data.totalPensionTF;
+  const taxFreeH = taxFreeTotal * scale;
+  const incomeTaxH = data.incomeTax * scale;
+  const niH = data.ni * scale;
+  const taxSplitTotalH = taxFreeH + incomeTaxH + niH;
+  const taxColY = grossY + (grossH - taxSplitTotalH) / 2;
+
+  // Tax-free block (top)
+  if (taxFreeTotal > 0) {
+    node(cols[2], taxColY, taxFreeH, COLOR.taxFree, 0.85);
+    label(cols[2] + COL_W + 4, taxColY + taxFreeH/2 + 4, 'Tax-Free', 'start', 9, c.teal);
+    label(cols[2] + COL_W + 4, taxColY + taxFreeH/2 + 15, fmtK(taxFreeTotal), 'start', 8, c.text3);
+    flow(cols[1], grossY, taxFreeH, cols[2], taxColY, taxFreeH, COLOR.taxFree, 0.25);
+  }
+  // Income tax block
+  if (data.incomeTax > 0) {
+    const ity = taxColY + taxFreeH + 2;
+    node(cols[2], ity, incomeTaxH, COLOR.tax, 0.85);
+    label(cols[2] + COL_W + 4, ity + incomeTaxH/2 + 4, 'Income Tax', 'start', 9, c.amber);
+    label(cols[2] + COL_W + 4, ity + incomeTaxH/2 + 15, fmtK(data.incomeTax), 'start', 8, c.text3);
+    flow(cols[1], grossY + taxFreeH, incomeTaxH, cols[2], ity, incomeTaxH, COLOR.tax, 0.25);
+  }
+  // NI block
+  if (data.ni > 0) {
+    const niy = taxColY + taxFreeH + incomeTaxH + 4;
+    node(cols[2], niy, niH, COLOR.ni, 0.85);
+    label(cols[2] + COL_W + 4, niy + niH/2 + 4, 'NI/SS', 'start', 9, c.amber);
+    label(cols[2] + COL_W + 4, niy + niH/2 + 14, fmtK(data.ni), 'start', 8, c.text3);
+    flow(cols[1], grossY + taxFreeH + incomeTaxH, niH, cols[2], niy, niH, COLOR.ni, 0.22);
+  }
+
+  // ── Column 3: Net income ──────────────────────────────────
+  const netIncomeVal = Math.max(0, data.totalIncome - data.totalTax);
+  const netH = netIncomeVal * scale;
+  const netY = grossY + grossH - netH;
+  node(cols[3], netY, netH, c.accent, 0.9);
+  label(cols[3] + COL_W/2, netY - 6, 'Net Income', 'middle', 9.5, c.text, true);
+  label(cols[3] + COL_W/2, netY - 6 + 12, fmtK(netIncomeVal), 'middle', 8.5, c.accent);
+  // Flow: tax-free passes → net
+  flow(cols[2], taxColY, taxFreeH, cols[3], netY, taxFreeH, COLOR.taxFree, 0.22);
+  // Flow: net taxable → net
+  const netTxH = (netIncomeVal - taxFreeTotal) * scale;
+  if (netTxH > 0) flow(cols[2], taxColY + taxFreeH + incomeTaxH + niH + 6, netTxH, cols[3], netY + taxFreeH, netTxH, c.accent, 0.22);
+
+  // ── Column 4: Expenses ────────────────────────────────────
+  const expFiltered = data.expenseSources.filter(e => e.amount > 0);
+  let e4y = PAD.top + (usableH - data.totalExpenses * scale) * 0.5;
+  const expStartY = e4y;
+  expFiltered.forEach(exp => {
+    const h = exp.amount * scale;
+    const col = expColor(exp.type);
+    node(cols[4], e4y, h, col, 0.85);
+    const truncName = exp.name.length > 15 ? exp.name.slice(0,13)+'…' : exp.name;
+    label(cols[4] + COL_W + 4, e4y + h/2 + 4, truncName, 'start', 9, c.text2);
+    label(cols[4] + COL_W + 4, e4y + h/2 + 15, fmtK(exp.amount), 'start', 8, c.text3);
+    exp._y4 = e4y; exp._h4 = h; exp._col = col;
+    e4y += h + 2;
+  });
+
+  // Debt payments node
+  if (data.debtPmt > 0) {
+    const dh = data.debtPmt * scale;
+    node(cols[4], e4y + 4, dh, COLOR.debt, 0.8);
+    label(cols[4] + COL_W + 4, e4y + 4 + dh/2 + 4, 'Debt Payments', 'start', 9, c.red);
+    label(cols[4] + COL_W + 4, e4y + 4 + dh/2 + 15, fmtK(data.debtPmt), 'start', 8, c.text3);
+    e4y += dh + 6;
+  }
+
+  // Flow: net → expenses
+  const totalExpH = data.totalExpenses * scale;
+  let netCursor = netY;
+  let expCursor = expStartY;
+  expFiltered.forEach(exp => {
+    const h = exp._h4;
+    flow(cols[3], netCursor, h, cols[4], exp._y4, h, exp._col, 0.28);
+    netCursor += h;
+  });
+
+  // ── Column 5: Surplus / Deficit ───────────────────────────
+  const surplusVal = data.netSurplus;
+  const surplusH   = Math.abs(surplusVal) * scale;
+  const surplusY   = netY + totalExpH + data.debtPmt * scale + 8;
+
+  if (data.isDeficit) {
+    // Red deficit block below expenses
+    const defY = netY + netH + 4;
+    node(cols[4], defY, surplusH, COLOR.deficit, 0.85);
+    label(cols[4] + COL_W + 4, defY + surplusH/2 + 4, '⚠ Deficit', 'start', 9.5, c.red, true);
+    label(cols[4] + COL_W + 4, defY + surplusH/2 + 16, fmtK(Math.abs(surplusVal)) + ' from portfolio', 'start', 8, c.red);
+  } else {
+    // Green surplus
+    const surY = netCursor + 4;
+    node(cols[5], surY, Math.max(2, surplusH), COLOR.surplus, 0.85);
+    label(cols[5] + COL_W + 4, surY + Math.max(2, surplusH)/2 + 4, 'Surplus', 'start', 9.5, c.accent, true);
+    label(cols[5] + COL_W + 4, surY + Math.max(2, surplusH)/2 + 16, fmtK(surplusVal), 'start', 8, c.accent);
+    flow(cols[3], netCursor, surplusH, cols[5], surY, Math.max(2, surplusH), COLOR.surplus, 0.3);
+  }
+
+  // ── Column labels at top ──────────────────────────────────
+  [
+    [cols[0] + COL_W/2, 'SOURCES'],
+    [cols[1] + COL_W/2, 'GROSS'],
+    [cols[2] + COL_W/2, 'TAX'],
+    [cols[3] + COL_W/2, 'NET'],
+    [cols[4] + COL_W/2, 'EXPENSES'],
+    [cols[5] + COL_W/2, data.isDeficit ? '' : 'SURPLUS']
+  ].forEach(([x, txt]) => {
+    if (txt) label(x, 11, txt, 'middle', 8.5, c.text3);
+  });
+}
+
+// Build the timeline phase strip and milestone markers
+function buildCFTimeline() {
+  if (!projection.length) return;
+  const p = state.profile;
+  const slider = document.getElementById('cf-age-slider');
+  if (!slider) return;
+
+  slider.min = 0;
+  slider.max = projection.length - 1;
+  slider.value = 0;
+
+  // Phase strip
+  const strip = document.getElementById('cf-phase-strip');
+  if (strip) {
+    strip.innerHTML = '';
+    const n = projection.length;
+    projection.forEach((row, i) => {
+      const seg = document.createElement('div');
+      seg.className = 'cf-phase-seg';
+      seg.style.left = (i / n * 100) + '%';
+      seg.style.width = (1 / n * 100) + '%';
+      // Colour by phase
+      if (row.liquidBalance <= 0 && row.retired) {
+        seg.style.background = 'rgba(248,113,113,0.55)'; // deficit/liquid gone
+        seg.style.color = '#f87171';
+        seg.textContent = '';
+      } else if (row.retired && row.fireReached) {
+        seg.style.background = 'rgba(74,222,128,0.35)';
+        seg.style.color = '#4ade80';
+      } else if (row.retired) {
+        seg.style.background = 'rgba(251,191,36,0.35)';
+        seg.style.color = '#fbbf24';
+      } else {
+        seg.style.background = 'rgba(96,165,250,0.25)';
+        seg.style.color = '#60a5fa';
+      }
+      strip.appendChild(seg);
+    });
+    // Phase legend labels
+    const phases = [];
+    const first = projection[0];
+    const fireRow = projection.find(r => r.fireReached);
+    const retireRow = projection.find(r => r.retired);
+    if (retireRow) {
+      const pct = (projection.indexOf(retireRow) / (projection.length - 1)) * 100;
+      const el = document.createElement('div');
+      el.className = 'cf-phase-seg';
+      el.style.cssText = `left:${pct}%;font-size:8.5px;color:var(--amber);background:transparent;border:none`;
+    }
+  }
+
+  // Age labels
+  const labelsEl = document.getElementById('cf-age-labels');
+  if (labelsEl) {
+    labelsEl.innerHTML = '';
+    const step = Math.ceil(projection.length / 8);
+    projection.forEach((row, i) => {
+      if (i % step === 0 || i === projection.length - 1) {
+        const span = document.createElement('span');
+        span.style.cssText = `position:absolute;left:${(i/(projection.length-1)*100).toFixed(1)}%;transform:translateX(-50%)`;
+        span.textContent = row.age;
+        labelsEl.appendChild(span);
+      }
+    });
+    labelsEl.style.position = 'relative';
+  }
+
+  // Milestone markers
+  const msEl = document.getElementById('cf-milestone-markers');
+  if (msEl) {
+    msEl.innerHTML = '';
+    msEl.style.position = 'relative';
+    const n = projection.length;
+    const tColors = { retirement:'var(--amber)', income:'var(--accent)', debt:'var(--red)', investment:'var(--blue)', 'asset-sale':'var(--teal)', 'asset-purchase':'var(--purple)', custom:'var(--text2)' };
+    state.milestones.forEach(m => {
+      let idx = -1;
+      if (m.trigger === 'age') idx = projection.findIndex(r => r.age === m.value);
+      else idx = projection.findIndex(r => r.year === m.value);
+      if (idx < 0) return;
+      const pct = (idx / (n - 1)) * 100;
+      const col = tColors[m.type] || 'var(--purple)';
+      const marker = document.createElement('div');
+      marker.className = 'cf-ms-marker';
+      marker.style.cssText = `left:${pct}%;position:absolute;top:0;bottom:0`;
+      marker.innerHTML = `<div class="cf-ms-dot" style="background:${col}"></div><div class="cf-ms-line" style="background:${col}66"></div><div class="cf-ms-tip">${m.name} · ${m.trigger==='age'?'Age':'Year'} ${m.value}</div>`;
+      marker.onclick = () => { slider.value = idx; onCFSlider(idx); };
+      msEl.appendChild(marker);
+    });
+    // Runout marker
+    const runoutAge = projection[0]?.liquidRunoutAge;
+    if (runoutAge) {
+      const idx = projection.findIndex(r => r.age === runoutAge);
+      if (idx >= 0) {
+        const pct = (idx / (n - 1)) * 100;
+        const marker = document.createElement('div');
+        marker.className = 'cf-ms-marker';
+        marker.style.cssText = `left:${pct}%;position:absolute;top:0;bottom:0`;
+        marker.innerHTML = `<div class="cf-ms-dot" style="background:var(--red)"></div><div class="cf-ms-line" style="background:rgba(248,113,113,.5)"></div><div class="cf-ms-tip">💧 Liquid Runout · Age ${runoutAge}</div>`;
+        marker.onclick = () => { slider.value = idx; onCFSlider(idx); };
+        msEl.appendChild(marker);
+      }
+    }
+  }
+
+  // Initial draw at age 0
+  onCFSlider(0);
+}
+
+function onCFSlider(idx) {
+  idx = parseInt(idx);
+  const row = projection[idx];
+  if (!row) return;
+
+  const data = getCFDataForAge(row.age);
+  if (!data) return;
+
+  // Update label
+  const label = document.getElementById('cf-timeline-label');
+  if (label) label.textContent = `Age ${row.age} · ${row.year}`;
+
+  // KPI cards
+  const set = (id, val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
+  set('cf-income',   cur(data.totalIncome));
+  set('cf-expenses', cur(data.totalExpenses));
+  set('cf-tax',      cur(data.totalTax));
+  set('cf-surplus',  data.isDeficit ? '−'+cur(Math.abs(data.netSurplus)) : '+'+cur(data.netSurplus));
+
+  const incomeSub = document.getElementById('cf-income-sub');
+  if (incomeSub) incomeSub.textContent = `at age ${row.age}`;
+
+  const taxSub = document.getElementById('cf-tax-sub');
+  if (taxSub) taxSub.textContent = data.totalIncome > 0 ? 'effective ' + (data.totalTax/data.totalIncome*100).toFixed(1) + '% rate' : '';
+
+  const surplusSub = document.getElementById('cf-surplus-sub');
+  if (surplusSub) surplusSub.textContent = data.isDeficit ? '⚠ Drawing from portfolio' : data.row.retired ? 'In drawdown' : 'Accumulating';
+
+  const surplusKpi = document.querySelector('#view-cashflow .kpi:last-child');
+  // Update surplus KPI colour
+  const kpiEl = document.getElementById('cf-surplus')?.closest('.kpi');
+  if (kpiEl) {
+    kpiEl.className = 'kpi ' + (data.isDeficit ? 'red' : 'blue');
+  }
+
+  // Phase badge
+  const phaseBadge = document.getElementById('cf-sankey-phase');
+  if (phaseBadge) {
+    if (data.row.liquidBalance <= 0 && data.retired) {
+      phaseBadge.className = 'badge red';
+      phaseBadge.textContent = '🔴 Liquid Assets Exhausted';
+    } else if (data.fireReached && data.retired) {
+      phaseBadge.className = 'badge green';
+      phaseBadge.textContent = '✓ FIRE Achieved';
+    } else if (data.retired) {
+      phaseBadge.className = 'badge amber';
+      phaseBadge.textContent = '⭕ Drawdown Phase';
+    } else {
+      phaseBadge.className = 'badge blue';
+      phaseBadge.textContent = '◈ Accumulation Phase';
+    }
+  }
+
+  const deficitFlag = document.getElementById('cf-deficit-flag');
+  if (deficitFlag) deficitFlag.style.display = data.isDeficit ? 'inline' : 'none';
+
+  // Pie label
+  const pieAge = document.getElementById('cf-pie-age-label');
+  if (pieAge) pieAge.textContent = `(age ${row.age})`;
+
+  // Draw Sankey
+  drawSankey(data);
+
+  // Update income/expense pies for this age
+  const c = getThemeColors();
+  const pal = [c.accent, c.blue, c.amber, c.purple, c.teal, c.red, '#f97316'];
+  const expPal = [c.red, '#f97316', c.amber, '#a3e635', '#34d399', c.blue, c.purple];
+
+  destroyChart('chart-income-breakdown');
+  if (data.incomeSources.length > 0) {
+    charts['chart-income-breakdown'] = new Chart(document.getElementById('chart-income-breakdown'), {
+      type: 'doughnut',
+      data: { labels: data.incomeSources.map(s=>s.name), datasets:[{ data: data.incomeSources.map(s=>s.amount), backgroundColor: data.incomeSources.map((s,i)=>pal[i%pal.length]), borderWidth:0, hoverOffset:4 }] },
+      options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'right', labels:{ color:c.text, font:{size:10}, boxWidth:10, padding:8 } }, tooltip:{ callbacks:{ label: ctx => ' '+cur(ctx.raw)+' p.a.' } } } }
+    });
+  }
+
+  destroyChart('chart-expense-breakdown');
+  if (data.expenseSources.length > 0) {
+    charts['chart-expense-breakdown'] = new Chart(document.getElementById('chart-expense-breakdown'), {
+      type: 'doughnut',
+      data: { labels: data.expenseSources.map(e=>e.name), datasets:[{ data: data.expenseSources.map(e=>e.amount), backgroundColor: data.expenseSources.map((e,i)=>expPal[i%expPal.length]), borderWidth:0, hoverOffset:4 }] },
+      options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'right', labels:{ color:c.text, font:{size:10}, boxWidth:10, padding:8 } }, tooltip:{ callbacks:{ label: ctx => ' '+cur(ctx.raw)+' p.a.' } } } }
+    });
+  }
+}
+
+function updateCashFlowKPIs() {
+  // Sync the timeline if cashflow view is active, else just update KPIs at current age
+  const p = state.profile;
+  const mInc = state.income.filter(i=>(i.fromAge||0)<=p.age&&p.age<(i.untilAge||999)).reduce((s,i)=>s+i.monthly,0);
+  const mExp = state.expenses.filter(e=>(e.fromAge||0)<=p.age&&p.age<(e.untilAge||99)).reduce((s,e)=>s+e.monthly,0);
+  const bd = buildIncomeBreakdown(mInc*12, p.age);
+  const tr = calcTax(mInc*12, p.taxRegime, bd);
+  const annTax = tr.income + tr.ni;
+  document.getElementById('cf-income').textContent   = cur(mInc*12);
+  document.getElementById('cf-expenses').textContent = cur(mExp*12);
+  document.getElementById('cf-tax').textContent      = cur(annTax);
+  document.getElementById('cf-surplus').textContent  = cur(mInc*12 - mExp*12 - annTax);
+}
+
+function drawCFLifetimeChart() {
+  const c = getThemeColors();
+  destroyChart('chart-cashflow-lifetime');
+  charts['chart-cashflow-lifetime'] = new Chart(document.getElementById('chart-cashflow-lifetime'), {
+    type: 'bar',
+    data: {
+      labels: projection.map(r => r.age),
+      datasets: [
+        { label: 'Income', data: projection.map(r => r.annualIncome), backgroundColor: `${c.accent}75`, stack: 'in' },
+        { label: 'ISA (tax-free)', data: projection.map(r => r.isaIncome||0), backgroundColor: `${c.teal}60`, stack: 'in' },
+        { label: 'Expenses', data: projection.map(r => -r.annualExpenses), backgroundColor: `${c.red}70`, stack: 'out' },
+        { label: 'Tax', data: projection.map(r => -r.totalTax), backgroundColor: `${c.amber}70`, stack: 'out' },
+        { label: 'Debt Payments', data: projection.map(r => -(r.debtPayment||0)), backgroundColor: `${c.red}44`, stack: 'out' }
+      ]
+    },
+    options: {
+      ...cOpts(true),
+      onClick: (e, els) => {
+        if (els.length > 0) {
+          const idx = els[0].index;
+          const slider = document.getElementById('cf-age-slider');
+          if (slider) { slider.value = idx; onCFSlider(idx); }
+        }
+      },
+      plugins: {
+        ...cOpts(true).plugins,
+        tooltip: {
+          ...cOpts().plugins.tooltip,
+          callbacks: {
+            afterBody: ctx => {
+              const row = projection[ctx[0]?.dataIndex];
+              if (!row) return [];
+              const lines = [`Net: ${cur(row.annualIncome - row.totalTax - row.annualExpenses)}`];
+              if (row.retired) lines.push('Phase: Drawdown');
+              if (row.liquidBalance <= 0 && row.retired) lines.push('⚠ Liquid assets exhausted!');
+              return lines;
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+// =========================================================
+// CHART HELPERS
+// =========================================================
+function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+function cOpts(stacked=false){
+  const c=getThemeColors();
+  return {responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+    plugins:{legend:{labels:{color:c.text,font:{size:11,family:"'Nunito',sans-serif"},boxWidth:13,padding:10}},
+      tooltip:{backgroundColor:c.tip_bg,titleColor:c.tip_ttl,bodyColor:c.tip_bdy,borderColor:c.tip_bdr,borderWidth:1,padding:9}},
+    scales:{x:{stacked,grid:{color:c.grid},ticks:{color:c.text2,font:{size:10},maxTicksLimit:14}},
+      y:{stacked,grid:{color:c.grid},ticks:{color:c.text2,font:{size:10},callback:v=>{if(Math.abs(v)>=1e6)return'£'+(v/1e6).toFixed(1)+'M';if(Math.abs(v)>=1e3)return'£'+(v/1e3).toFixed(0)+'k';return v;}}}}};
+}
+function dOpts(pos='right'){
+  const c=getThemeColors();
+  return {responsive:true,maintainAspectRatio:false,plugins:{legend:{position:pos,labels:{color:c.text,font:{size:11},boxWidth:12,padding:10}}}};
+}
+
+function updateCharts() {
+  const c=getThemeColors(),ages=projection.map(r=>r.age),pal=[c.accent,c.blue,c.amber,c.purple];
+  const mk=(id,type,data,opts)=>{destroyChart(id);charts[id]=new Chart(document.getElementById(id),{type,data,options:opts});};
+
+  mk('chart-networth-main','line',{labels:ages,datasets:[
+    {label:'Net Worth',data:projection.map(r=>r.netWorth),borderColor:c.accent,backgroundColor:`${c.accent}18`,fill:true,tension:.4,pointRadius:0,borderWidth:2.5},
+    {label:'Investments',data:projection.map(r=>r.investPortfolio),borderColor:c.blue,fill:false,tension:.4,pointRadius:0,borderWidth:1.5},
+    {label:'FIRE Target',data:projection.map(r=>r.fireTarget),borderColor:c.amber,borderDash:[6,4],fill:false,tension:0,pointRadius:0,borderWidth:1.5}
+  ]},cOpts());
+
+  mk('chart-cashflow-main','bar',{labels:ages,datasets:[
+    {label:'Income',data:projection.map(r=>r.annualIncome),backgroundColor:`${c.accent}80`,stack:'s'},
+    {label:'Expenses',data:projection.map(r=>-r.annualExpenses),backgroundColor:`${c.red}80`,stack:'s'},
+    {label:'Tax',data:projection.map(r=>-r.totalTax),backgroundColor:`${c.amber}70`,stack:'s'}
+  ]},cOpts(true));
+
+  mk('chart-allocation','doughnut',{labels:state.investments.allocation.map(a=>a.name),datasets:[{data:state.investments.allocation.map(a=>a.pct),backgroundColor:pal,borderWidth:0,hoverOffset:4}]},dOpts());
+
+  const mInc=state.income.filter(i=>(i.fromAge||0)<=state.profile.age&&state.profile.age<(i.untilAge||999)).reduce((s,i)=>s+i.monthly,0);
+  const mIncBd = buildIncomeBreakdown(mInc*12, state.profile.age);
+  const mIncTax = calcTax(mInc*12, state.profile.taxRegime, mIncBd);
+  const txP = mIncTax.income, niP = mIncTax.ni;
+  // Tax pie: show ISA tax-free, pension tax-free, taxable, and tax
+  const isaM = mIncBd.isa, penTfM = mIncBd.pensionTaxFree, netPaid = mInc*12 - isaM - penTfM - txP - niP;
+  mk('chart-tax-pie','doughnut',{
+    labels:['Taxable Take-Home','ISA Tax-Free','Pension Tax-Free','Income Tax','NI/SS'],
+    datasets:[{data:[Math.max(0,netPaid), isaM, penTfM, txP, niP],
+      backgroundColor:[c.accent,c.teal,`${c.teal}99`,c.amber,c.red],borderWidth:0,hoverOffset:4}]
+  },dOpts());
+
+  mk('chart-nw-full','line',{labels:ages,datasets:[
+    {label:'Net Worth',data:projection.map(r=>r.netWorth),borderColor:c.accent,backgroundColor:`${c.accent}10`,fill:true,tension:.4,pointRadius:0,borderWidth:2.5},
+    {label:'Investments',data:projection.map(r=>r.investPortfolio),borderColor:c.blue,fill:false,tension:.4,pointRadius:0,borderWidth:2},
+    {label:'Non-Investable',data:projection.map(r=>r.totalNonInv),borderColor:c.amber,borderDash:[4,3],fill:false,tension:.4,pointRadius:0,borderWidth:1.5},
+    {label:'FIRE Target',data:projection.map(r=>r.fireTarget),borderColor:c.red,borderDash:[6,4],fill:false,tension:0,pointRadius:0,borderWidth:1.5}
+  ]},cOpts());
+
+  mk('chart-asset-stack','line',{labels:ages,datasets:[
+    {label:'Investments',data:projection.map(r=>r.investPortfolio),borderColor:c.accent,backgroundColor:`${c.accent}30`,fill:true,tension:.4,pointRadius:0},
+    {label:'Non-Investable',data:projection.map(r=>r.totalNonInv),borderColor:c.blue,backgroundColor:`${c.blue}20`,fill:true,tension:.4,pointRadius:0}
+  ]},cOpts(true));
+
+  mk('chart-debt','line',{labels:ages,datasets:[{label:'Total Debt',data:projection.map(r=>r.totalDebt),borderColor:c.red,backgroundColor:`${c.red}10`,fill:true,tension:.3,pointRadius:0,borderWidth:2}]},cOpts());
+
+  mk('chart-inc-exp','line',{labels:ages,datasets:[
+    {label:'Net Income',data:projection.map(r=>r.netIncome),borderColor:c.accent,fill:false,tension:.4,pointRadius:0,borderWidth:2},
+    {label:'Expenses',data:projection.map(r=>r.annualExpenses),borderColor:c.red,fill:false,tension:.4,pointRadius:0,borderWidth:2}
+  ]},cOpts());
+
+  mk('chart-invest-growth','line',{labels:ages,datasets:[{label:'Portfolio',data:projection.map(r=>r.investPortfolio),borderColor:c.accent,backgroundColor:`${c.accent}12`,fill:true,tension:.4,pointRadius:0,borderWidth:2.5}]},cOpts());
+
+  // Change 5: Liquid cash runway chart
+  destroyChart('chart-liquid-runway');
+  const liquidData = projection.map(r => r.liquidBalance);
+  const runoutAge  = projection[0]?.liquidRunoutAge;
+  const runoutIdx  = runoutAge ? projection.findIndex(r => r.age === runoutAge) : -1;
+  const liqColors  = liquidData.map((v, i) => v <= 0 ? `${c.red}cc` : (runoutIdx > 0 && i >= runoutIdx - 1 ? `${c.amber}cc` : `${c.teal}cc`));
+  charts['chart-liquid-runway'] = new Chart(document.getElementById('chart-liquid-runway'), {
+    type: 'line',
+    data: { labels: ages, datasets: [
+      { label: 'Liquid Balance (ISA/GIA/Cash)', data: liquidData, borderColor: c.teal, backgroundColor: `${c.teal}18`, fill: true, tension: 0.4, pointRadius: 0, borderWidth: 2.5 },
+      { label: 'Zero line', data: ages.map(() => 0), borderColor: `${c.red}60`, borderDash: [3,3], fill: false, pointRadius: 0, borderWidth: 1 }
+    ]},
+    options: {
+      ...cOpts(),
+      plugins: { ...cOpts().plugins,
+        annotation: undefined,
+        tooltip: { ...cOpts().plugins.tooltip,
+          callbacks: { afterBody: ctx => runoutAge && ctx[0]?.label >= runoutAge ? ['⚠ Liquid accounts exhausted'] : [] }
+        }
+      }
+    }
+  });
+
+  // Populate liquid runout info text
+  const liqInfoEl = document.getElementById('liquid-runout-info');
+  if (liqInfoEl) {
+    if (runoutAge) {
+      liqInfoEl.innerHTML = `<div class="alert warning">⚠ <strong>Liquid accounts (ISA, GIA, Cash) projected to run out at age ${runoutAge}.</strong> After this point, you would need to draw from less-liquid assets (pensions, property) or reduce spending. Consider maintaining a larger emergency buffer or sequencing drawdown to avoid depleting liquid funds early.</div>`;
+    } else {
+      const liquidNow = state.investments.accounts.filter(a=>a.type==='ISA'||a.type==='GIA'||a.type==='Cash').reduce((s,a)=>s+a.balance,0);
+      liqInfoEl.innerHTML = liquidNow > 0
+        ? `<div class="alert success">✓ Liquid accounts are projected to remain solvent throughout the model period. Current liquid balance: <strong>${cur(liquidNow)}</strong>.</div>`
+        : `<div class="alert info">ℹ No liquid accounts (ISA, GIA, Cash) currently entered. Add accounts of these types to track liquidity runway.</div>`;
+    }
+  }
+
+  // Change 2: Debt payoff table
+  const dpTbody = document.getElementById('debt-payoff-tbody');
+  if (dpTbody) {
+    const payoffInfo = getDebtPayoffInfo();
+    const currentYear = new Date().getFullYear();
+    dpTbody.innerHTML = payoffInfo.map(d => {
+      const yearsLeft = d.payoffYear ? Math.max(0, d.payoffYear - currentYear) : '—';
+      const color = d.payoffYear && d.payoffYear - currentYear <= 5 ? 'pos' : '';
+      return `<tr>
+        <td><strong>${d.name}</strong></td>
+        <td class="mono neg">£${d.balance.toLocaleString()}</td>
+        <td class="mono">${d.interestRate}%</td>
+        <td class="mono">£${d.monthlyPayment.toLocaleString()}/mo</td>
+        <td class="mono ${color}">${d.payoffYear || 'Never'}</td>
+        <td class="mono ${color}">${d.payoffAge ? 'Age ' + d.payoffAge : '—'}</td>
+        <td class="mono">${yearsLeft} yrs</td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:20px">No debts entered</td></tr>';
+  }
+
+  mk('chart-tax-timeline','line',{labels:ages,datasets:[
+    {label:'Total Tax',data:projection.map(r=>r.totalTax),borderColor:c.amber,fill:false,tension:.3,pointRadius:0,borderWidth:2},
+    {label:'Gross Income',data:projection.map(r=>r.annualIncome),borderColor:c.accent,borderDash:[4,3],fill:false,tension:.3,pointRadius:0,borderWidth:1.5}
+  ]},cOpts());
+
+  mk('chart-income-breakdown','doughnut',{labels:state.income.map(i=>i.name),datasets:[{data:state.income.map(i=>i.monthly),backgroundColor:pal.concat([c.red,c.teal]),borderWidth:0,hoverOffset:4}]},dOpts());
+  mk('chart-expense-breakdown','doughnut',{labels:state.expenses.map(e=>e.name),datasets:[{data:state.expenses.map(e=>e.monthly),backgroundColor:[c.red,'#f97316',c.amber,'#a3e635','#34d399',c.blue,c.purple],borderWidth:0,hoverOffset:4}]},dOpts());
+  mk('chart-alloc-pie','doughnut',{labels:state.investments.allocation.map(a=>a.name),datasets:[{data:state.investments.allocation.map(a=>a.pct),backgroundColor:pal,borderWidth:0,hoverOffset:4}]},dOpts());
+
+  // Rebuild CF lifetime chart + timeline if cashflow view is active
+  if (document.getElementById('view-cashflow')?.classList.contains('active')) {
+    drawCFLifetimeChart();
+    buildCFTimeline();
+  } else {
+    // Just destroy so it gets rebuilt fresh on next visit
+    destroyChart('chart-cashflow-lifetime');
+  }
+
+  updateProgressChart();
+  if(document.getElementById('view-montecarlo').classList.contains('active')) runMonteCarlo();
+  updateScenarios();
+  updateEstate();
+}
+
+// =========================================================
+// TABLES
+// =========================================================
+function updateTables() {
+  const rows=tableRange>=999?projection:projection.slice(0,tableRange);
+  document.getElementById('projection-tbody').innerHTML=rows.map(r=>`
+    <tr>
+      <td class="mono">${r.year}</td>
+      <td class="mono">${r.age}</td>
+      <td class="mono pos">${cur(r.netWorth)}</td>
+      <td class="mono">${cur(r.investPortfolio)}</td>
+      <td class="mono">${cur(r.annualIncome)}</td>
+      <td class="mono" style="color:var(--teal)">${r.isaIncome>0?cur(r.isaIncome):'—'}</td>
+      <td class="mono" style="color:var(--accent)">${r.pensionTaxFree>0?cur(r.pensionTaxFree):'—'}</td>
+      <td class="mono neg">-${cur(r.annualExpenses)}</td>
+      <td class="mono" style="color:var(--amber)">-${cur(r.totalTax)}</td>
+      <td class="mono ${r.savings>=0?'pos':'neg'}">${r.savings>=0?'+':''}${cur(Math.abs(r.savings))}</td>
+      <td class="mono pos">+${cur(r.investReturn)}</td>
+      <td>${r.retired?'<span class="badge amber">Retired</span>':r.fireReached?'<span class="badge green">FIRE ✓</span>':'<span class="badge blue">Accum.</span>'}</td>
+    </tr>`).join('');
+  renderIncomeTable();renderExpenseTable();renderAssetsTable();renderDebtsTable();renderAccountsTable();
+}
+
+function setTableRange(n,btn){tableRange=n;document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');updateTables();}
+
+const actionBtns=(ef,df)=>`<div class="actions"><button class="btn sm" onclick="${ef}" title="Edit">✏</button><button class="btn sm danger" onclick="${df}" title="Delete">✕</button></div>`;
+
+function renderIncomeTable() {
+  document.getElementById('income-tbody').innerHTML=state.income.map(i=>`<tr>
+    <td><strong>${i.name}</strong></td><td class="mono pos">£${i.monthly.toLocaleString()}</td>
+    <td><span class="badge ${i.type.includes('Drawdown')||i.type==='Pension'?'teal':'blue'}">${i.type}</span></td>
+    <td class="mono">${i.fromAge||0}</td><td class="mono">${i.untilAge||'—'}</td><td class="mono">${i.growthRate||0}%</td>
+    <td>${actionBtns(`openModal('income',${i.id})`,`removeItem('income',${i.id})`)}</td></tr>`).join('');
+}
+function renderExpenseTable(){
+  document.getElementById('expense-tbody').innerHTML=state.expenses.map(e=>`<tr>
+    <td><strong>${e.name}</strong></td><td class="mono neg">£${e.monthly.toLocaleString()}</td>
+    <td><span class="badge amber">${e.type}</span></td><td class="mono">${e.fromAge||0}</td><td class="mono">${e.untilAge||99}</td>
+    <td>${actionBtns(`openModal('expense',${e.id})`,`removeItem('expense',${e.id})`)}</td></tr>`).join('');
+}
+function renderAssetsTable(){
+  document.getElementById('assets-tbody').innerHTML=state.assets.map(a=>`<tr>
+    <td><strong>${a.name}</strong></td><td class="mono pos">£${a.value.toLocaleString()}</td>
+    <td class="mono">${a.growthRate}%</td><td><span class="badge green">${a.type}</span></td>
+    <td>${actionBtns(`openModal('asset',${a.id})`,`removeItem('asset',${a.id})`)}</td></tr>`).join('');
+}
+function renderDebtsTable(){
+  document.getElementById('debts-tbody').innerHTML=state.debts.map(d=>`<tr>
+    <td><strong>${d.name}</strong></td><td class="mono neg">£${d.balance.toLocaleString()}</td>
+    <td class="mono">${d.interestRate}%</td><td class="mono">£${d.monthlyPayment.toLocaleString()}</td>
+    <td>${actionBtns(`openModal('debt',${d.id})`,`removeItem('debt',${d.id})`)}</td></tr>`).join('');
+}
+function toggleRentalFields() {
+  const type = document.getElementById('mf-type')?.value;
+  const isRental = type === 'Rental Property';
+  const rg = document.getElementById('rental-income-group');
+  const lg = document.getElementById('linked-debt-group');
+  if (rg) rg.style.display = isRental ? 'flex' : 'none';
+  if (lg) lg.style.display = isRental ? 'flex' : 'none';
+}
+
+function renderAccountsTable(){
+  const debtPayoffInfo = getDebtPayoffInfo();
+  document.getElementById('accounts-tbody').innerHTML=state.investments.accounts.map(a=>{
+    const retStr = a.customReturnRate !== null && a.customReturnRate !== undefined
+      ? `<span class="badge teal">${a.customReturnRate}% custom</span>`
+      : `<span class="badge blue">${(blendedReturn()*100).toFixed(1)}% blended</span>`;
+    const rentalStr = a.isRental && a.monthlyRentalIncome > 0
+      ? `<br><span style="font-size:10px;color:var(--teal);font-family:var(--font-m)">+£${a.monthlyRentalIncome}/mo rental</span>` : '';
+    const linkedDebt = a.linkedDebtId ? debtPayoffInfo.find(d=>d.id===a.linkedDebtId) : null;
+    const payoffStr = linkedDebt?.payoffYear
+      ? `<br><span style="font-size:10px;color:var(--accent);font-family:var(--font-m)">Mortgage paid off ${linkedDebt.payoffYear} (age ${linkedDebt.payoffAge})</span>` : '';
+    return `<tr>
+      <td><strong>${a.name}</strong>${rentalStr}${payoffStr}</td>
+      <td class="mono pos">£${a.balance.toLocaleString()}</td>
+      <td class="mono">£${a.monthlyContrib.toLocaleString()}/mo</td>
+      <td><span class="badge green">${a.type}</span></td>
+      <td>${retStr}</td>
+      <td>${actionBtns(`openModal('account',${a.id})`,`removeItem('account',${a.id})`)}</td>
+    </tr>`;
+  }).join('');
+}
+
+// =========================================================
+// MODAL SYSTEM
+// =========================================================
+const MODAL_DEFS = {
+  income: {
+    title: id=>id?'Edit Income Source':'Add Income Source',
+    fields: ()=>`
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Name</label><input class="form-input" id="mf-name" placeholder="e.g. Salary"></div>
+        <div class="form-group"><label class="form-label">Monthly Amount (£)</label><input type="number" class="form-input" id="mf-monthly" min="0"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Type</label>
+          <select class="form-select" id="mf-type">
+            <option>Employment</option><option>Self-Employment</option><option>Rental</option>
+            <option>Pension Drawdown</option><option>ISA Drawdown</option><option>Annuity</option>
+            <option>Dividend Income</option><option>State Benefits</option><option>Other</option>
+          </select></div>
+        <div class="form-group"><label class="form-label">Growth Rate % p.a.</label><input type="number" class="form-input" id="mf-growth" value="3" step="0.5" min="0"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">From Age <span style="color:var(--accent)">(stream starts)</span></label><input type="number" class="form-input" id="mf-fromage" value="0" min="0"><div class="form-hint">0 = active immediately</div></div>
+        <div class="form-group"><label class="form-label">Until Age <span style="color:var(--red)">(stream ends)</span></label><input type="number" class="form-input" id="mf-until" placeholder="e.g. 55"><div class="form-hint">Leave blank = never ends</div></div>
+      </div>
+      <div class="info-panel"><div class="info-panel-title">💡 Tip: Drawdown Strategies</div>
+        <div style="font-size:12px;color:var(--text2)">Set <strong>From Age = 55</strong> for ISA drawdown (or 57 from 2028 for pensions). Set <strong>Until Age = 67</strong> to stop drawdown when state pension begins. Pension Drawdown income should have growth = 0 as the amount is what you choose to take, not salary growth.</div>
+      </div>`,
+    load: item=>{
+      document.getElementById('mf-name').value    = item.name;
+      document.getElementById('mf-monthly').value = item.monthly;
+      document.getElementById('mf-type').value    = item.type;
+      document.getElementById('mf-growth').value  = item.growthRate||0;
+      document.getElementById('mf-fromage').value = item.fromAge||0;
+      document.getElementById('mf-until').value   = item.untilAge||'';
+    },
+    save: id=>({id:id||Date.now(),name:document.getElementById('mf-name').value.trim(),monthly:parseFloat(document.getElementById('mf-monthly').value)||0,type:document.getElementById('mf-type').value,growthRate:parseFloat(document.getElementById('mf-growth').value)||0,fromAge:parseInt(document.getElementById('mf-fromage').value)||0,untilAge:parseInt(document.getElementById('mf-until').value)||999}),
+    validate:()=>!document.getElementById('mf-name').value.trim()?'Name is required.':null,
+    collection:()=>state.income,setCollection:v=>{state.income=v;}
+  },
+
+  expense:{
+    title:id=>id?'Edit Expense':'Add Expense',
+    fields:()=>`
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Category</label><input class="form-input" id="mf-name" placeholder="e.g. Healthcare"></div>
+        <div class="form-group"><label class="form-label">Monthly (£)</label><input type="number" class="form-input" id="mf-monthly" min="0"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Type</label><select class="form-select" id="mf-type"><option>Essential</option><option>Lifestyle</option><option>Discretionary</option></select></div>
+        <div class="form-group"><label class="form-label">From Age</label><input type="number" class="form-input" id="mf-fromage" value="0" min="0"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Until Age</label><input type="number" class="form-input" id="mf-until" value="99" min="0"><div class="form-hint">Use 99 for whole-life expense</div></div>
+        <div class="form-group"></div>
+      </div>`,
+    load:item=>{document.getElementById('mf-name').value=item.name;document.getElementById('mf-monthly').value=item.monthly;document.getElementById('mf-type').value=item.type;document.getElementById('mf-fromage').value=item.fromAge||0;document.getElementById('mf-until').value=item.untilAge||99;},
+    save:id=>({id:id||Date.now(),name:document.getElementById('mf-name').value.trim(),monthly:parseFloat(document.getElementById('mf-monthly').value)||0,type:document.getElementById('mf-type').value,fromAge:parseInt(document.getElementById('mf-fromage').value)||0,untilAge:parseInt(document.getElementById('mf-until').value)||99}),
+    validate:()=>!document.getElementById('mf-name').value.trim()?'Name is required.':null,
+    collection:()=>state.expenses,setCollection:v=>{state.expenses=v;}
+  },
+
+  asset:{
+    title:id=>id?'Edit Asset':'Add Non-Investable Asset',
+    fields:()=>`
+      <div class="alert info" style="margin-bottom:12px">ℹ For <strong>property, cash and physical assets</strong> only. Investment portfolios go in Investments → Accounts.</div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Name</label><input class="form-input" id="mf-name" placeholder="e.g. Primary Residence"></div>
+        <div class="form-group"><label class="form-label">Current Value (£)</label><input type="number" class="form-input" id="mf-value" min="0"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Annual Growth Rate %</label><input type="number" class="form-input" id="mf-growth" value="3.5" step="0.1"></div>
+        <div class="form-group"><label class="form-label">Type</label><select class="form-select" id="mf-type"><option>Property</option><option>Cash</option><option>Physical</option><option>Other</option></select></div>
+      </div>`,
+    load:item=>{document.getElementById('mf-name').value=item.name;document.getElementById('mf-value').value=item.value;document.getElementById('mf-growth').value=item.growthRate;document.getElementById('mf-type').value=item.type;},
+    save:id=>({id:id||Date.now(),name:document.getElementById('mf-name').value.trim(),value:parseFloat(document.getElementById('mf-value').value)||0,growthRate:parseFloat(document.getElementById('mf-growth').value)||0,type:document.getElementById('mf-type').value}),
+    validate:()=>!document.getElementById('mf-name').value.trim()?'Name is required.':null,
+    collection:()=>state.assets,setCollection:v=>{state.assets=v;}
+  },
+
+  debt:{
+    title:id=>id?'Edit Liability':'Add Liability',
+    fields:()=>`
+      <div class="form-row"><div class="form-group"><label class="form-label">Name</label><input class="form-input" id="mf-name" placeholder="e.g. Mortgage"></div><div class="form-group"><label class="form-label">Balance (£)</label><input type="number" class="form-input" id="mf-balance" min="0"></div></div>
+      <div class="form-row"><div class="form-group"><label class="form-label">Interest Rate %</label><input type="number" class="form-input" id="mf-interest" value="3.5" step="0.1"></div><div class="form-group"><label class="form-label">Monthly Payment (£)</label><input type="number" class="form-input" id="mf-payment" min="0"></div></div>`,
+    load:item=>{document.getElementById('mf-name').value=item.name;document.getElementById('mf-balance').value=item.balance;document.getElementById('mf-interest').value=item.interestRate;document.getElementById('mf-payment').value=item.monthlyPayment;},
+    save:id=>({id:id||Date.now(),name:document.getElementById('mf-name').value.trim(),balance:parseFloat(document.getElementById('mf-balance').value)||0,interestRate:parseFloat(document.getElementById('mf-interest').value)||0,monthlyPayment:parseFloat(document.getElementById('mf-payment').value)||0}),
+    validate:()=>!document.getElementById('mf-name').value.trim()?'Name is required.':null,
+    collection:()=>state.debts,setCollection:v=>{state.debts=v;}
+  },
+
+  account:{
+    title:id=>id?'Edit Investment Account':'Add Investment Account',
+    fields:()=>`
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Account / Property Name</label><input class="form-input" id="mf-name" placeholder="e.g. Buy-to-Let Flat, S&amp;S ISA"></div>
+        <div class="form-group"><label class="form-label">Balance / Value (£)</label><input type="number" class="form-input" id="mf-balance" min="0"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Type</label>
+          <select class="form-select" id="mf-type" onchange="toggleRentalFields()">
+            <option>ISA</option><option>Pension</option><option>GIA</option><option>SIPP</option>
+            <option>401k</option><option>IRA</option><option>Rental Property</option><option>Other</option>
+          </select></div>
+        <div class="form-group"><label class="form-label">Custom Return Rate % p.a. <span style="color:var(--text3)">(blank = blended)</span></label>
+          <input type="number" class="form-input" id="mf-custom-return" placeholder="e.g. 5.5" step="0.1">
+          <div class="form-hint">Rental: capital growth + net yield combined</div></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Monthly Contribution (£)</label><input type="number" class="form-input" id="mf-contrib" min="0" value="0"></div>
+        <div class="form-group" id="rental-income-group">
+          <label class="form-label">Monthly Rental Income (£) <span style="color:var(--text3)">(rental only)</span></label>
+          <input type="number" class="form-input" id="mf-rental-income" min="0" value="0">
+          <div class="form-hint">Net income after voids, agent fees, repairs</div>
+        </div>
+      </div>
+      <div class="form-group" id="linked-debt-group">
+        <label class="form-label">Linked Mortgage <span style="color:var(--text3)">(optional)</span></label>
+        <select class="form-select" id="mf-linked-debt">
+          <option value="">— None —</option>
+          ${state.debts.map(d=>`<option value="${d.id}">${d.name} (£${d.balance.toLocaleString()} @ ${d.interestRate}%)</option>`).join('')}
+        </select>
+        <div class="form-hint">Auto-shows payoff date; debt payments stop automatically when balance reaches £0</div>
+      </div>`,
+    load: item => {
+      document.getElementById('mf-name').value           = item.name;
+      document.getElementById('mf-balance').value        = item.balance;
+      document.getElementById('mf-type').value           = item.type;
+      document.getElementById('mf-contrib').value        = item.monthlyContrib;
+      document.getElementById('mf-custom-return').value  = (item.customReturnRate !== null && item.customReturnRate !== undefined) ? item.customReturnRate : '';
+      document.getElementById('mf-rental-income').value  = item.monthlyRentalIncome || 0;
+      const ldEl = document.getElementById('mf-linked-debt');
+      if (ldEl && item.linkedDebtId) ldEl.value = item.linkedDebtId;
+      toggleRentalFields();
+    },
+    save: id => ({
+      id:                  id || Date.now(),
+      name:                document.getElementById('mf-name').value.trim(),
+      balance:             parseFloat(document.getElementById('mf-balance').value) || 0,
+      monthlyContrib:      parseFloat(document.getElementById('mf-contrib').value) || 0,
+      type:                document.getElementById('mf-type').value,
+      customReturnRate:    document.getElementById('mf-custom-return').value !== '' ? parseFloat(document.getElementById('mf-custom-return').value) : null,
+      isRental:            document.getElementById('mf-type').value === 'Rental Property',
+      monthlyRentalIncome: parseFloat(document.getElementById('mf-rental-income')?.value) || 0,
+      linkedDebtId:        document.getElementById('mf-linked-debt')?.value ? parseInt(document.getElementById('mf-linked-debt').value) : null
+    }),
+    validate: () => !document.getElementById('mf-name').value.trim() ? 'Name is required.' : null,
+    collection: () => state.investments.accounts,
+    setCollection: v => { state.investments.accounts = v; }
+  },
+
+  // CHANGE 4: Milestone modal with asset transaction fields
+  milestone:{
+    title:id=>id?'Edit Milestone':'Add Milestone / Transaction',
+    fields:()=>`
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Name</label><input class="form-input" id="mf-name" placeholder="e.g. Sell Investment Property"></div>
+        <div class="form-group"><label class="form-label">Category</label>
+          <select class="form-select" id="mf-type">
+            <option value="retirement">Retirement</option><option value="income">Income Change</option>
+            <option value="debt">Debt Event</option><option value="investment">Investment Change</option>
+            <option value="asset-sale">Asset Sale</option><option value="asset-purchase">Asset Purchase</option>
+            <option value="custom">Other</option>
+          </select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Trigger Type</label><select class="form-select" id="mf-trigger"><option value="age">Age</option><option value="year">Calendar Year</option></select></div>
+        <div class="form-group"><label class="form-label">Trigger Value</label><input type="number" class="form-input" id="mf-value" placeholder="e.g. 55 or 2035"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Impact Description</label><input class="form-input" id="mf-impact" placeholder="Describe what changes at this point..."></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Transaction Amount (£)<span style="color:var(--accent)"> (optional)</span></label><input type="number" class="form-input" id="mf-txamount" value="0" placeholder="0"><div class="form-hint">Positive = cash received (sale, inheritance). Negative = cash paid out (purchase). Added to investment portfolio.</div></div>
+        <div class="form-group"></div>
+      </div>
+      <div class="info-panel"><div class="info-panel-title">💡 Asset Transactions</div><div style="font-size:12px;color:var(--text2)"><strong>Asset Sale:</strong> Enter positive amount (e.g. +200000 for downsizing proceeds). <strong>Asset Purchase:</strong> Enter negative amount (e.g. -50000 for a new car or buy-to-let deposit). The amount flows directly into/out of your investment portfolio in that year.</div></div>`,
+    load:item=>{document.getElementById('mf-name').value=item.name;document.getElementById('mf-type').value=item.type;document.getElementById('mf-trigger').value=item.trigger;document.getElementById('mf-value').value=item.value;document.getElementById('mf-impact').value=item.impact||'';document.getElementById('mf-txamount').value=item.txAmount||0;},
+    save:id=>({id:id||Date.now(),name:document.getElementById('mf-name').value.trim(),type:document.getElementById('mf-type').value,trigger:document.getElementById('mf-trigger').value,value:parseInt(document.getElementById('mf-value').value)||0,impact:document.getElementById('mf-impact').value.trim(),txAmount:parseFloat(document.getElementById('mf-txamount').value)||0}),
+    validate:()=>!document.getElementById('mf-name').value.trim()?'Name is required.':null,
+    collection:()=>state.milestones,setCollection:v=>{state.milestones=v;}
+  },
+
+  // CHANGE 5: Scenario editor
+  scenario:{
+    title:id=>id?'Edit Scenario':'Add Scenario',
+    fields:()=>`
+      <div class="form-group"><label class="form-label">Scenario Name</label><input class="form-input" id="mf-name" placeholder="e.g. Coast FIRE"></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Retirement Age</label><input type="number" class="form-input" id="mf-retage" value="55"></div>
+        <div class="form-group"><label class="form-label">Monthly Savings Boost (£)</label><input type="number" class="form-input" id="mf-savboost" value="0"><div class="form-hint">+ve = save more, −ve = save less</div></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Return Adjustment (% p.a.)</label><input type="number" class="form-input" id="mf-retadj" value="0" step="0.5"><div class="form-hint">E.g. +2 = better market, −2 = worse</div></div>
+        <div class="form-group"><label class="form-label">Spending Multiplier (×)</label><input type="number" class="form-input" id="mf-spendmult" value="1.0" step="0.05"><div class="form-hint">1.0 = same, 0.75 = lean, 1.4 = fat</div></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Inflation Adjustment (% p.a.)</label><input type="number" class="form-input" id="mf-infladj" value="0" step="0.1"><div class="form-hint">Override on top of base inflation</div></div>
+        <div class="form-group"><label class="form-label">SWR Override (%)<span style="color:var(--text3)"> (blank = use profile)</span></label><input type="number" class="form-input" id="mf-swrover" placeholder="e.g. 3.5" step="0.1"></div>
+      </div>
+      <div class="info-panel"><div class="info-panel-title">💡 FIRE Variants</div><div style="font-size:12px;color:var(--text2)"><strong>Lean FIRE:</strong> Spend ×0.75, SWR 3.5% — minimalist lifestyle.<br><strong>Fat FIRE:</strong> Spend ×1.4, SWR 4.5% — comfortable, no compromises.<br><strong>Coast FIRE:</strong> Stop contributing now and let compounding do the work (set savings boost to −full contribution amount).<br><strong>Barista FIRE:</strong> Retire from full-time but work part-time (add part-time income stream from retirement age).</div></div>`,
+    load:item=>{document.getElementById('mf-name').value=item.name;document.getElementById('mf-retage').value=item.retireAge;document.getElementById('mf-savboost').value=item.savingsBoost;document.getElementById('mf-retadj').value=item.returnAdj;document.getElementById('mf-spendmult').value=item.spendMult;document.getElementById('mf-infladj').value=item.inflationAdj||0;document.getElementById('mf-swrover').value=item.swrOverride||'';},
+    save:id=>({id:id||Date.now(),name:document.getElementById('mf-name').value.trim(),retireAge:parseInt(document.getElementById('mf-retage').value)||55,savingsBoost:parseFloat(document.getElementById('mf-savboost').value)||0,returnAdj:parseFloat(document.getElementById('mf-retadj').value)||0,spendMult:parseFloat(document.getElementById('mf-spendmult').value)||1,inflationAdj:parseFloat(document.getElementById('mf-infladj').value)||0,swrOverride:parseFloat(document.getElementById('mf-swrover').value)||null}),
+    validate:()=>!document.getElementById('mf-name').value.trim()?'Name is required.':null,
+    collection:()=>state.scenarios,setCollection:v=>{state.scenarios=v;}
+  }
+};
+
+let _modalType=null,_modalEditId=null;
+function openModal(type,id=null){
+  const def=MODAL_DEFS[type];if(!def)return;
+  _modalType=type;_modalEditId=id;_infoModal=false;
+  document.getElementById('modal-title').textContent=def.title(id);
+  document.getElementById('modal-body').innerHTML=def.fields();
+  if(id!==null){const item=def.collection().find(x=>x.id===id);if(item)def.load(item);}
+  document.getElementById('modal-footer').innerHTML=`<button class="btn" onclick="closeModalForce()">Cancel</button><button class="btn primary" onclick="saveModal()">${id?'Save Changes':'Add'}</button>`;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function saveModal(){
+  const def=MODAL_DEFS[_modalType];
+  const err=def.validate?def.validate():null;
+  if(err){showToast(err,false);return;}
+  const item=def.save(_modalEditId);
+  const col=def.collection();
+  if(_modalEditId){const idx=col.findIndex(x=>x.id===_modalEditId);if(idx>=0)col[idx]=item;else col.push(item);}
+  else col.push(item);
+  def.setCollection(col);
+  closeModalForce();
+  if(_modalType==='milestone'){updateMilestones();recalculate();}
+  else if(_modalType==='scenario'){updateScenarios();}
+  else recalculate();
+  showToast(_modalEditId?'Updated':'Added');
+}
+
+function closeModal(e){if(e.target===document.getElementById('modal-overlay'))closeModalForce();}
+function closeModalForce(){document.getElementById('modal-overlay').classList.remove('open');_modalType=null;_modalEditId=null;_infoModal=false;}
+
+function removeItem(type,id){
+  const def=MODAL_DEFS[type];if(!def)return;
+  const name=def.collection().find(x=>x.id===id)?.name||'this item';
+  if(!confirm(`Delete "${name}"?`))return;
+  def.setCollection(def.collection().filter(x=>x.id!==id));
+  if(type==='milestone'){updateMilestones();recalculate();}
+  else if(type==='scenario')updateScenarios();
+  else recalculate();
+  showToast('Deleted');
+}
+
+// =========================================================
+// CHANGE 7: MONTE CARLO with historical regimes
+// =========================================================
+function setMCMode(mode) {
+  mcMode=mode;
+  document.querySelectorAll('.mc-mode-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('mc-btn-'+mode).classList.add('active');
+  const msgs={
+    random:'🎲 <strong>Randomised simulation:</strong> 1,000 runs using a normal distribution of returns based on your blended return and volatility settings.',
+    historical:'📜 <strong>Historical Regimes:</strong> 1,000 runs sampling real annual return sequences from global equity markets (1970–2023). Captures real crash and boom sequences.',
+    stress:'💥 <strong>Stress Tests:</strong> Each simulation randomly applies a historical market shock (Dot-com, GFC, Stagflation, etc.) at a random point in your timeline, then continues with normal returns.'
+  };
+  document.getElementById('mc-info-box').innerHTML=msgs[mode];
+  runMonteCarlo();
+}
+
+function runMonteCarlo(){
+  const N=1000,p=state.profile;
+  const yrs=Math.max(1,p.retireAge-p.age);
+  const startPort=state.investments.accounts.reduce((s,a)=>s+a.balance,0);
+  const annContrib=state.investments.accounts.reduce((s,a)=>s+a.monthlyContrib*12,0);
+  const R=blendedReturn(),sigma=p.volatility/100;
+  const annExp=state.expenses.reduce((s,e)=>s+e.monthly*12,0);
+  const fireTarget=annExp*Math.pow(1+p.inflation/100,yrs)*(100/p.swr);
+  const c=getThemeColors();
+  const stressEvents=Object.values(STRESS_SEQUENCES);
+
+  const outcomes=[];
+  for(let i=0;i<N;i++){
+    let port=startPort;
+    let stressStart=mcMode==='stress'?Math.floor(Math.random()*yrs):null;
+    let stressSeq=mcMode==='stress'?stressEvents[Math.floor(Math.random()*stressEvents.length)]:null;
+    for(let y=0;y<yrs;y++){
+      let ret;
+      if(mcMode==='random'){
+        ret=R+randNormal()*sigma;
+      } else if(mcMode==='historical'){
+        ret=HIST_RETURNS[Math.floor(Math.random()*HIST_RETURNS.length)]/100;
+      } else {
+        // stress: inject shock sequence at random point
+        if(stressStart!==null&&y>=stressStart&&y<stressStart+stressSeq.length){
+          ret=stressSeq[y-stressStart]/100;
+        } else {
+          ret=R+randNormal()*(sigma*0.7);
+        }
+      }
+      port=Math.max(0,port*(1+ret)+annContrib);
+    }
+    outcomes.push(port);
+  }
+  outcomes.sort((a,b)=>a-b);
+
+  const successes=outcomes.filter(o=>o>=fireTarget).length;
+  const successRate=(successes/N*100).toFixed(1);
+  const median=outcomes[Math.floor(N*0.5)],p10=outcomes[Math.floor(N*0.1)],p90=outcomes[Math.floor(N*0.9)];
+
+  document.getElementById('mc-success').textContent=successRate+'%';
+  document.getElementById('mc-median').textContent=cur(median);
+  document.getElementById('mc-p10').textContent=cur(p10);
+  document.getElementById('mc-p90').textContent=cur(p90);
+  const badge=document.getElementById('badge-success-rate');
+  badge.textContent=successRate+'% likely';
+  badge.className='badge '+(successRate>=80?'green':successRate>=60?'amber':'red');
+
+  const bins=30,minO=outcomes[0],maxO=outcomes[N-1],bw=(maxO-minO)/bins;
+  const hist=Array(bins).fill(0);
+  outcomes.forEach(o=>{const b=Math.min(bins-1,Math.floor((o-minO)/bw));hist[b]++;});
+  destroyChart('cmcd');
+  charts['cmcd']=new Chart(document.getElementById('chart-mc-dist'),{type:'bar',
+    data:{labels:Array.from({length:bins},(_,i)=>cur(minO+i*bw+bw/2)),datasets:[{data:hist,backgroundColor:Array.from({length:bins},(_,i)=>(minO+i*bw)>=fireTarget?`${c.accent}cc`:`${c.red}88`),borderWidth:0,borderRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...cOpts().plugins.tooltip}},scales:{x:{display:false},y:{grid:{color:c.grid},ticks:{color:c.text2,font:{size:10}}}}}});
+
+  const fanPcts=[0.05,0.25,0.5,0.75,0.95],fanYD=[];
+  for(let y=0;y<yrs;y++){
+    const sm=[];
+    for(let i=0;i<200;i++){let port2=startPort;for(let yy=0;yy<=y;yy++)port2=Math.max(0,port2*(1+(mcMode==='historical'?HIST_RETURNS[Math.floor(Math.random()*HIST_RETURNS.length)]/100:R+randNormal()*sigma))+annContrib);sm.push(port2);}
+    sm.sort((a,b)=>a-b);fanYD.push(fanPcts.map(q=>sm[Math.floor(200*q)]));
+  }
+  destroyChart('cmcf');
+  charts['cmcf']=new Chart(document.getElementById('chart-mc-fan'),{type:'line',
+    data:{labels:Array.from({length:yrs},(_,i)=>p.age+i),datasets:fanPcts.map((q,qi)=>({label:`P${Math.round(q*100)}`,data:fanYD.map(d=>d[qi]),borderColor:[c.red,c.amber,c.accent,c.amber,c.red][qi],borderWidth:qi===2?2.5:1.2,fill:false,tension:.4,pointRadius:0}))},
+    options:cOpts()});
+
+  const sens=[{label:'Return +2%',ov:{returnAdj:2}},{label:'Return -2%',ov:{returnAdj:-2}},{label:'Retire 3yr earlier',ov:{retireAge:p.retireAge-3}},{label:'Retire 3yr later',ov:{retireAge:p.retireAge+3}},{label:'Spend -20%',ov:{spendMult:0.8}},{label:'Spend +20%',ov:{spendMult:1.2}}];
+  const baseNW=(projection.find(r=>r.age===p.retireAge)||projection[projection.length-1])?.netWorth||0;
+  const sensV=sens.map(s=>((buildProjection(s.ov).find(r=>r.age===p.retireAge)||buildProjection(s.ov)[buildProjection(s.ov).length-1])?.netWorth||0)-baseNW);
+  destroyChart('csens');
+  charts['csens']=new Chart(document.getElementById('chart-sensitivity'),{type:'bar',
+    data:{labels:sens.map(s=>s.label),datasets:[{data:sensV,backgroundColor:sensV.map(v=>v>=0?`${c.accent}cc`:`${c.red}99`),borderWidth:0,borderRadius:4}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...cOpts().plugins.tooltip}},scales:{x:{grid:{color:c.grid},ticks:{color:c.text2,font:{size:10},callback:v=>(v>=0?'+':'')+cur(v)}},y:{grid:{display:false},ticks:{color:c.text2,font:{size:11}}}}}});
+}
+
+// =========================================================
+// CHANGE 5: SCENARIOS — editable, with + Add
+// =========================================================
+function updateScenarios(){
+  const c=getThemeColors(),colors=[c.accent,c.blue,c.amber,c.purple,c.teal,c.red];
+  document.getElementById('scenario-cards').innerHTML=state.scenarios.map((s,i)=>`
+    <div class="scenario-card ${i===0?'selected':''}" onclick="document.querySelectorAll('.scenario-card').forEach(x=>x.classList.remove('selected'));this.classList.add('selected')">
+      <div class="scenario-actions"><button class="btn sm" onclick="event.stopPropagation();openModal('scenario',${s.id})" title="Edit">✏</button><button class="btn sm danger" onclick="event.stopPropagation();removeItem('scenario',${s.id})" title="Delete">✕</button></div>
+      <div class="scenario-name" style="color:${colors[i%colors.length]}">${s.name}</div>
+      <div class="scenario-meta">Retire: ${s.retireAge} · Spend: ${Math.round(s.spendMult*100)}%${s.swrOverride?` · SWR: ${s.swrOverride}%`:''}<br>Return adj: ${s.returnAdj>=0?'+':''}${s.returnAdj}% · Savings: ${s.savingsBoost>=0?'+':''}£${s.savingsBoost}/mo</div>
+    </div>`).join('');
+  const computed=state.scenarios.map(s=>{
+    const pr=buildProjection({retireAge:s.retireAge,savingsBoost:s.savingsBoost,returnAdj:s.returnAdj,spendMult:s.spendMult,inflationAdj:s.inflationAdj||0,swrOverride:s.swrOverride});
+    const atR=pr.find(r=>r.age===s.retireAge)||pr[pr.length-1];
+    const fireR=pr.find(r=>r.fireReached);
+    return{...s,nw:atR?.netWorth||0,fireAge:fireR?.age||'—',proj:pr};
+  });
+  destroyChart('cscen');
+  charts['cscen']=new Chart(document.getElementById('chart-scenarios'),{type:'line',data:{labels:projection.map(r=>r.age),datasets:computed.map((s,i)=>({label:s.name,data:s.proj.map(r=>r.netWorth),borderColor:colors[i%colors.length],fill:false,tension:.4,pointRadius:0,borderWidth:2.5}))},options:cOpts()});
+  destroyChart('cscenfa');
+  charts['cscenfa']=new Chart(document.getElementById('chart-scenario-fireage'),{type:'bar',data:{labels:computed.map(s=>s.name),datasets:[{label:'FIRE Age',data:computed.map(s=>typeof s.fireAge==='number'?s.fireAge:0),backgroundColor:colors.slice(0,computed.length),borderWidth:0,borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...cOpts().plugins.tooltip}},scales:{x:{grid:{display:false},ticks:{color:c.text2,font:{size:10}}},y:{grid:{color:c.grid},ticks:{color:c.text2,font:{size:10}}}}}});
+  document.getElementById('scenario-tbody').innerHTML=computed.map((s,i)=>`<tr>
+    <td><strong style="color:${colors[i%colors.length]}">${s.name}</strong></td>
+    <td class="mono">${s.fireAge}</td><td class="mono pos">${cur(s.nw)}</td>
+    <td class="mono">£${Math.round((s.nw*(( s.swrOverride||state.profile.swr)/100))/12).toLocaleString()}/mo</td>
+    <td><span class="badge ${s.nw>500000?'green':'red'}">${s.nw>500000?'On Track':'At Risk'}</span></td></tr>`).join('');
+}
+
+// =========================================================
+// TAX VIEW — editable bands, ISA/pension breakdown
+// =========================================================
+function updateTax(){
+  const p = state.profile;
+  // Get current-age income breakdown
+  let isaAnnual=0, pensionAnnual=0, otherAnnual=0;
+  state.income.forEach(inc => {
+    const fa=inc.fromAge||0, ua=inc.untilAge||999;
+    if (p.age >= fa && p.age < ua) {
+      const amt = inc.monthly * 12;
+      if (inc.type==='ISA Drawdown') isaAnnual+=amt;
+      else if (inc.type==='Pension Drawdown'||inc.type==='Pension') pensionAnnual+=amt;
+      else otherAnnual+=amt;
+    }
+  });
+  if (p.age >= p.statePensionAge) otherAnnual += p.statePension * 12;
+  // Add rental income
+  state.investments.accounts.forEach(a => {
+    if (a.isRental && a.monthlyRentalIncome > 0) otherAnnual += a.monthlyRentalIncome * 12;
+  });
+
+  const pensionTaxFree = pensionAnnual * 0.25;
+  const pensionTaxable = pensionAnnual * 0.75;
+  const breakdown = { isa: isaAnnual, pensionTaxFree, pensionTaxable, other: otherAnnual };
+  const annInc = isaAnnual + pensionAnnual + otherAnnual;
+  const taxResult = calcTax(annInc, p.taxRegime, breakdown);
+  const tx = taxResult.income, ni = taxResult.ni;
+  const cgt = state.investments.accounts.reduce((s,a)=>s+a.balance,0)*0.001*0.2;
+  const eff = annInc>0?((tx+ni)/annInc*100).toFixed(1):'0.0';
+
+  document.getElementById('tx-income').textContent  = cur(tx);
+  document.getElementById('tx-ni').textContent      = cur(ni);
+  document.getElementById('tx-cgt').textContent     = cur(cgt);
+  document.getElementById('tx-effective').textContent = eff+'%';
+
+  // Show breakdown panel
+  const breakdownEl = document.getElementById('tx-breakdown');
+  if (breakdownEl) {
+    breakdownEl.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:0">
+        <div style="background:var(--teal-dim);border:1px solid rgba(45,212,191,.2);border-radius:8px;padding:10px;text-align:center">
+          <div style="font-size:9px;color:var(--teal);font-family:var(--font-m);letter-spacing:1.5px;text-transform:uppercase">ISA Drawdown</div>
+          <div style="font-family:var(--font-d);font-size:18px;color:var(--teal);margin-top:3px">${cur(isaAnnual)}</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;font-family:var(--font-m)">100% Tax-Free</div>
+        </div>
+        <div style="background:var(--green-dim,var(--accent-glow));border:1px solid rgba(74,222,128,.2);border-radius:8px;padding:10px;text-align:center">
+          <div style="font-size:9px;color:var(--accent);font-family:var(--font-m);letter-spacing:1.5px;text-transform:uppercase">Pension Tax-Free</div>
+          <div style="font-family:var(--font-d);font-size:18px;color:var(--accent);margin-top:3px">${cur(pensionTaxFree)}</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;font-family:var(--font-m)">25% PCLS (up to £268k)</div>
+        </div>
+        <div style="background:var(--amber-dim);border:1px solid rgba(251,191,36,.2);border-radius:8px;padding:10px;text-align:center">
+          <div style="font-size:9px;color:var(--amber);font-family:var(--font-m);letter-spacing:1.5px;text-transform:uppercase">Pension Taxable</div>
+          <div style="font-family:var(--font-d);font-size:18px;color:var(--amber);margin-top:3px">${cur(pensionTaxable)}</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;font-family:var(--font-m)">75% taxed as income</div>
+        </div>
+        <div style="background:var(--blue-dim);border:1px solid rgba(96,165,250,.2);border-radius:8px;padding:10px;text-align:center">
+          <div style="font-size:9px;color:var(--blue);font-family:var(--font-m);letter-spacing:1.5px;text-transform:uppercase">Other Taxable</div>
+          <div style="font-family:var(--font-d);font-size:18px;color:var(--blue);margin-top:3px">${cur(otherAnnual)}</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px;font-family:var(--font-m)">Employment, rental etc.</div>
+        </div>
+      </div>`;
+  }
+
+  renderTaxBandsTable(taxResult.taxableIncome || 0);
+  renderNIBandsTable(otherAnnual); // NI on earned income only
+}
+
+function renderTaxBandsTable(annInc){
+  let cumTax=0;
+  document.getElementById('tax-brackets-tbody').innerHTML=state.taxSettings.ukBands.map((b,i)=>{
+    const taxable=Math.max(0,Math.min(annInc||0,b.upper)-b.lower);
+    const bandTax=taxable*(b.rate/100);
+    cumTax+=bandTax;
+    return `<tr class="editable-tax-row">
+      <td><input value="${b.name}" onchange="state.taxSettings.ukBands[${i}].name=this.value;updateTax()"></td>
+      <td><input type="number" value="${b.rate}" step="0.5" style="width:55px" onchange="state.taxSettings.ukBands[${i}].rate=parseFloat(this.value)||0;updateTax();recalculate()"></td>
+      <td><input type="number" value="${b.lower}" style="width:80px" onchange="state.taxSettings.ukBands[${i}].lower=parseFloat(this.value)||0;updateTax();recalculate()"></td>
+      <td><input type="number" value="${b.upper>9999998?'':b.upper}" placeholder="No limit" style="width:80px" onchange="state.taxSettings.ukBands[${i}].upper=parseFloat(this.value)||99999999;updateTax();recalculate()"></td>
+      <td class="mono" style="color:var(--amber)">£${Math.round(bandTax).toLocaleString()}</td>
+      <td class="mono pos">£${Math.round(cumTax).toLocaleString()}</td>
+      <td><button class="btn sm danger" onclick="state.taxSettings.ukBands.splice(${i},1);updateTax();recalculate()">✕</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderNIBandsTable(annInc){
+  let cumNI=0;
+  document.getElementById('ni-brackets-tbody').innerHTML=state.taxSettings.ukNIBands.map((b,i)=>{
+    const inBand=Math.max(0,Math.min(annInc||0,b.upper)-b.lower);
+    const bandNI=inBand*(b.rate/100);
+    cumNI+=bandNI;
+    return `<tr class="editable-tax-row">
+      <td><input value="${b.name}" onchange="state.taxSettings.ukNIBands[${i}].name=this.value"></td>
+      <td><input type="number" value="${b.rate}" step="0.5" style="width:55px" onchange="state.taxSettings.ukNIBands[${i}].rate=parseFloat(this.value)||0;updateTax();recalculate()"></td>
+      <td><input type="number" value="${b.lower}" style="width:80px" onchange="state.taxSettings.ukNIBands[${i}].lower=parseFloat(this.value)||0;updateTax();recalculate()"></td>
+      <td><input type="number" value="${b.upper>9999998?'':b.upper}" placeholder="No limit" style="width:80px" onchange="state.taxSettings.ukNIBands[${i}].upper=parseFloat(this.value)||99999999;updateTax();recalculate()"></td>
+      <td class="mono" style="color:var(--amber)">£${Math.round(bandNI).toLocaleString()}</td>
+      <td><button class="btn sm danger" onclick="state.taxSettings.ukNIBands.splice(${i},1);updateTax();recalculate()">✕</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function addTaxBand(){
+  state.taxSettings.ukBands.push({name:'New Band',rate:0,lower:0,upper:99999999});
+  updateTax();showToast('Band added — edit the values in the table');
+}
+function resetTaxBands(){if(!confirm('Reset to HMRC 2024/25 UK defaults?'))return;state.taxSettings.ukBands=defaultUKTaxBands();updateTax();recalculate();showToast('Tax bands reset to UK 2024/25');}
+function resetNIBands(){if(!confirm('Reset NI bands to 2024/25 defaults?'))return;state.taxSettings.ukNIBands=defaultUKNIBands();updateTax();recalculate();showToast('NI bands reset to UK 2024/25');}
+
+// =========================================================
+// CHANGE 6: ESTATE — legacy target, drawdown impact
+// =========================================================
+function updateEstate(){
+  if(!projection.length)return;
+  const es=state.estateSettings;
+  // Sync form fields into state (live update)
+  es.legacyTarget   = parseFloat(document.getElementById('es-legacy-target')?.value)||0;
+  es.legacyAge      = parseInt(document.getElementById('es-legacy-age')?.value)||85;
+  es.gift           = parseFloat(document.getElementById('es-gift')?.value)||0;
+  es.charityPct     = parseFloat(document.getElementById('es-charity')?.value)||0;
+  es.nilRateBand    = parseFloat(document.getElementById('es-nil-rate')?.value)||325000;
+
+  const legacyRow   = projection.find(r=>r.age===es.legacyAge)||projection[projection.length-1];
+  const estate      = legacyRow.netWorth;
+  const charity     = es.charityPct/100;
+  const iht         = Math.max(0,(estate-es.nilRateBand-es.gift)*0.4*(1-charity));
+  const heirs       = Math.max(0,estate-iht-es.gift);
+  const onTrack     = heirs>=es.legacyTarget;
+  const gap         = heirs-es.legacyTarget;
+
+  document.getElementById('es-estate').textContent = cur(estate);
+  document.getElementById('es-iht').textContent    = cur(iht);
+  document.getElementById('es-heirs').textContent  = cur(heirs);
+  document.getElementById('es-goal-status').textContent = es.legacyTarget>0?(onTrack?'✓ On Track':'✗ Shortfall'):'Not set';
+  document.getElementById('es-goal-status').style.color = es.legacyTarget>0?(onTrack?'var(--accent)':'var(--red)'):'var(--text3)';
+  document.getElementById('es-goal-sub').textContent = es.legacyTarget>0?(onTrack?`+${cur(gap)} surplus`:cur(Math.abs(gap))+' shortfall'):'Set a legacy target above';
+
+  const advice=document.getElementById('es-legacy-advice');
+  if(es.legacyTarget>0){
+    advice.style.display='block';
+    const annualBudget=Math.max(0,(legacyRow.investPortfolio-es.legacyTarget)*(state.profile.swr/100));
+    advice.innerHTML=`<div class="info-panel-title">📊 Legacy-Constrained Drawdown</div>
+      <div style="font-size:12px;color:var(--text2)">To preserve <strong>${cur(es.legacyTarget)}</strong> for heirs at age ${es.legacyAge}, your legacy-adjusted annual drawdown budget from your investment portfolio is approximately <strong>${cur(annualBudget)}</strong> per year (${cur(annualBudget/12)}/mo). This is the SWR applied only to the portion above your legacy target.<br><br>${onTrack?'<span style="color:var(--accent)">✓ Your current projection comfortably meets the legacy goal.</span>':'<span style="color:var(--red)">⚠ Current projection may fall short. Consider increasing savings, reducing drawdown, or adjusting the legacy target.</span>'}</div>`;
+  } else advice.style.display='none';
+
+  const c=getThemeColors();
+  // Legacy-adjusted vs unconstrained drawdown chart
+  destroyChart('cestate');
+  charts['cestate']=new Chart(document.getElementById('chart-estate'),{type:'line',data:{labels:projection.map(r=>r.age),datasets:[
+    {label:'Gross Estate',data:projection.map(r=>r.netWorth),borderColor:c.accent,fill:false,tension:.4,pointRadius:0,borderWidth:2},
+    {label:'After IHT (est.)',data:projection.map(r=>Math.max(0,r.netWorth-Math.max(0,(r.netWorth-es.nilRateBand)*0.4))),borderColor:c.blue,borderDash:[5,5],fill:false,tension:.4,pointRadius:0,borderWidth:2},
+    es.legacyTarget>0?{label:'Legacy Target',data:projection.map(_=>es.legacyTarget),borderColor:c.amber,borderDash:[3,3],fill:false,tension:0,pointRadius:0,borderWidth:1.5}:null
+  ].filter(Boolean)},options:cOpts()});
+
+  // Drawdown impact chart
+  destroyChart('cedrawn');
+  const p=state.profile;
+  const unconstrained=projection.filter(r=>r.age>=p.retireAge).map(r=>({age:r.age,draw:r.investPortfolio*(p.swr/100)}));
+  const constrained=projection.filter(r=>r.age>=p.retireAge).map(r=>({age:r.age,draw:Math.max(0,(r.investPortfolio-es.legacyTarget)*(p.swr/100))}));
+  if(document.getElementById('chart-estate-drawdown')){
+    charts['cedrawn']=new Chart(document.getElementById('chart-estate-drawdown'),{type:'line',data:{labels:unconstrained.map(r=>r.age),datasets:[
+      {label:'Unconstrained Drawdown',data:unconstrained.map(r=>r.draw),borderColor:c.blue,fill:false,tension:.4,pointRadius:0,borderWidth:2},
+      {label:'Legacy-Constrained Drawdown',data:constrained.map(r=>r.draw),borderColor:c.accent,fill:false,tension:.4,pointRadius:0,borderWidth:2,borderDash:es.legacyTarget>0?[]:undefined}
+    ]},options:cOpts()});
+  }
+}
+
+// =========================================================
+// MILESTONES
+// =========================================================
+function updateMilestones(){
+  const p=state.profile,yr=new Date().getFullYear();
+  const tColors={retirement:'var(--amber)',income:'var(--accent)',debt:'var(--red)',investment:'var(--blue)','asset-sale':'var(--teal)','asset-purchase':'var(--purple)',custom:'var(--text2)'};
+  const txBadge=m=>m.txAmount&&m.txAmount!==0?`<span class="badge ${m.txAmount>0?'teal':'red'}">${m.txAmount>0?'+':''}${cur(m.txAmount)}</span>`:'<span style="color:var(--text3);font-family:var(--font-m);font-size:11px">—</span>';
+  document.getElementById('milestones-tbody').innerHTML=state.milestones.map(m=>{
+    const reached=m.trigger==='age'?p.age>=m.value:yr>=m.value;
+    return `<tr><td><strong>${m.name}</strong></td><td><span class="badge" style="background:${tColors[m.type]||'var(--accent)'}22;color:${tColors[m.type]||'var(--accent)'};border:1px solid ${tColors[m.type]||'var(--accent)'}33">${m.type}</span></td><td class="mono">${m.trigger==='age'?'Age':'Year'}</td><td class="mono">${m.value}</td><td style="font-size:12px;color:var(--text3)">${m.impact||'—'}</td><td>${txBadge(m)}</td><td><span class="badge ${reached?'green':'blue'}">${reached?'Reached':'Future'}</span></td><td>${actionBtns(`openModal('milestone',${m.id})`,`removeItem('milestone',${m.id})`)}</td></tr>`;
+  }).join('');
+
+  const sorted=[...state.milestones].sort((a,b)=>a.value-b.value);
+  document.getElementById('timeline-view').innerHTML=`<div style="display:flex;align-items:center;padding:14px 6px;overflow-x:auto;min-height:95px;gap:0">
+    ${sorted.map((m,i)=>{const col=tColors[m.type]||'var(--purple)';return`<div style="display:flex;align-items:center"><div style="display:flex;flex-direction:column;align-items:center;min-width:120px"><div style="width:36px;height:36px;border-radius:50%;background:${col};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:var(--bg);box-shadow:0 3px 10px ${col}55">${i+1}</div><div style="font-size:11px;font-weight:700;color:${col};margin-top:7px;text-align:center">${m.name}</div><div style="font-size:10px;color:var(--text3);font-family:var(--font-m);margin-top:1px">${m.trigger==='age'?'Age ':' '}${m.value}</div>${m.txAmount?`<div style="font-size:10px;font-family:var(--font-m);color:${m.txAmount>0?'var(--teal)':'var(--red)'}">${m.txAmount>0?'+':''}${cur(m.txAmount)}</div>`:''}</div>${i<sorted.length-1?`<div style="width:40px;height:2px;background:var(--border);flex-shrink:0"></div>`:''}</div>`;}).join('')}
+  </div>`;
+}
+
+// =========================================================
+// PROGRESS LOG
+// =========================================================
+function addProgressEntry(){
+  const date=document.getElementById('log-date').value,nw=parseFloat(document.getElementById('log-networth').value),notes=document.getElementById('log-notes').value;
+  if(!date||isNaN(nw)){showToast('Enter a date and net worth value.',false);return;}
+  state.progressLog.push({date,netWorth:nw,notes});
+  state.progressLog.sort((a,b)=>new Date(a.date)-new Date(b.date));
+  renderProgressTable();showToast('Entry logged');
+}
+function renderProgressTable(){
+  document.getElementById('progress-tbody').innerHTML=state.progressLog.map((e,i)=>{
+    const projRow=projection.find(r=>r.year===new Date(e.date).getFullYear());
+    const diff=projRow?e.netWorth-projRow.netWorth:0;
+    return`<tr><td class="mono">${e.date}</td><td class="mono pos">${cur(e.netWorth)}</td><td class="mono ${diff>=0?'pos':'neg'}">${diff>=0?'+':''}${cur(diff)}</td><td style="font-size:12px;color:var(--text3)">${e.notes||'—'}</td><td><button class="btn sm danger" onclick="removeProgress(${i})">✕</button></td></tr>`;
+  }).join('');
+  updateProgressChart();
+}
+function removeProgress(i){state.progressLog.splice(i,1);renderProgressTable();}
+function updateProgressChart(){
+  destroyChart('cprog');const c=getThemeColors();
+  charts['cprog']=new Chart(document.getElementById('chart-progress'),{type:'line',data:{labels:projection.map(r=>r.age),datasets:[
+    {label:'Projected',data:projection.map(r=>r.netWorth),borderColor:c.accent,borderDash:[5,4],fill:false,tension:.4,pointRadius:0,borderWidth:2},
+    {label:'Actual',data:state.progressLog.map(e=>e.netWorth),borderColor:c.amber,fill:false,tension:.2,pointRadius:6,borderWidth:2.5,pointBackgroundColor:c.amber}
+  ]},options:cOpts()});
+}
+
+// =========================================================
+// ALLOCATION SLIDERS
+// =========================================================
+function renderAllocationSliders(){
+  document.getElementById('allocation-sliders').innerHTML=state.investments.allocation.map((a,i)=>`
+    <div style="margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+        <span style="font-size:13px;color:var(--text2);font-weight:600">${a.name}</span>
+        <span style="font-size:12px;font-family:var(--font-m);color:var(--accent);font-weight:600" id="apct-${i}">${a.pct}%</span>
+      </div>
+      <input type="range" min="0" max="100" value="${a.pct}" oninput="updateAlloc(${i},this.value)">
+      <div style="font-size:10px;color:var(--text3);margin-top:2px;font-family:var(--font-m)">Expected return: ${a.annualReturn}% p.a.</div>
+    </div>`).join('');
+  updateBlendedDisplay();
+}
+function updateAlloc(i,val){
+  state.investments.allocation[i].pct=parseInt(val);
+  document.getElementById(`apct-${i}`).textContent=val+'%';
+  updateBlendedDisplay();
+  destroyChart('callocp');const c=getThemeColors();
+  charts['callocp']=new Chart(document.getElementById('chart-alloc-pie'),{type:'doughnut',data:{labels:state.investments.allocation.map(a=>a.name),datasets:[{data:state.investments.allocation.map(a=>a.pct),backgroundColor:[c.accent,c.blue,c.amber,c.purple],borderWidth:0,hoverOffset:4}]},options:dOpts()});
+}
+function updateBlendedDisplay(){document.getElementById('blended-return-display').textContent=(blendedReturn()*100).toFixed(2)+'%';}
+
+// =========================================================
+// PROFILE
+// =========================================================
+function saveProfile(){
+  const p=state.profile;
+  p.age=parseInt(document.getElementById('p-age').value)||p.age;
+  p.retireAge=parseInt(document.getElementById('p-retire-age').value)||p.retireAge;
+  p.lifeExp=parseInt(document.getElementById('p-life-exp').value)||p.lifeExp;
+  p.statePensionAge=parseInt(document.getElementById('p-state-pension-age').value)||p.statePensionAge;
+  p.taxRegime=document.getElementById('p-tax-regime').value;
+  p.currency=document.getElementById('p-currency').value;
+  p.statePension=parseFloat(document.getElementById('p-state-pension').value)||0;
+  p.returnRate=parseFloat(document.getElementById('p-return').value)||p.returnRate;
+  p.inflation=parseFloat(document.getElementById('p-inflation').value)||p.inflation;
+  p.incomeGrowth=parseFloat(document.getElementById('p-income-growth').value)||p.incomeGrowth;
+  p.swr=parseFloat(document.getElementById('p-swr').value)||p.swr;
+  p.volatility=parseFloat(document.getElementById('p-volatility').value)||p.volatility;
+  p.assetGrowth=parseFloat(document.getElementById('p-asset-growth').value)||p.assetGrowth;
+  recalculate();showView('dashboard');showToast('Profile saved & recalculated');
+}
+function populateProfileForm(){
+  const p=state.profile;
+  document.getElementById('p-age').value=p.age;
+  document.getElementById('p-retire-age').value=p.retireAge;
+  document.getElementById('p-life-exp').value=p.lifeExp;
+  document.getElementById('p-state-pension-age').value=p.statePensionAge;
+  document.getElementById('p-tax-regime').value=p.taxRegime;
+  document.getElementById('p-currency').value=p.currency;
+  document.getElementById('p-state-pension').value=p.statePension;
+  document.getElementById('p-return').value=p.returnRate;
+  document.getElementById('p-inflation').value=p.inflation;
+  document.getElementById('p-income-growth').value=p.incomeGrowth;
+  document.getElementById('p-swr').value=p.swr;
+  document.getElementById('p-volatility').value=p.volatility;
+  document.getElementById('p-asset-growth').value=p.assetGrowth||3.5;
+}
+function populateEstateForm(){
+  const es=state.estateSettings;
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v;};
+  set('es-legacy-target',es.legacyTarget||0);set('es-legacy-age',es.legacyAge||85);
+  set('es-gift',es.gift||0);set('es-charity',es.charityPct||0);set('es-nil-rate',es.nilRateBand||325000);
+}
+
+// =========================================================
+// EXPORT / IMPORT
+// =========================================================
+function getExportFilename(ext) {
+  const base = (document.getElementById('export-filename')?.value || 'fire-starter-plan').trim()
+    .replace(/[^a-zA-Z0-9_\-. ]/g, '').replace(/\s+/g, '-') || 'fire-starter-plan';
+  return base.endsWith('.' + ext) ? base : base + '.' + ext;
+}
+
+function exportJSON(){
+  // Sync estate form fields into state before export
+  state.estateSettings.legacyTarget  = parseFloat(document.getElementById('es-legacy-target')?.value)||0;
+  state.estateSettings.legacyAge     = parseInt(document.getElementById('es-legacy-age')?.value)||85;
+  state.estateSettings.gift          = parseFloat(document.getElementById('es-gift')?.value)||0;
+  state.estateSettings.charityPct    = parseFloat(document.getElementById('es-charity')?.value)||0;
+  state.estateSettings.nilRateBand   = parseFloat(document.getElementById('es-nil-rate')?.value)||325000;
+  const fname = getExportFilename('json');
+  download(fname, JSON.stringify(state, null, 2), 'application/json');
+  showToast(`Plan exported as ${fname}`);
+}
+
+function exportCSV(){
+  const hdr = ['Year','Age','Net Worth','Investments','Non-Inv','Total Assets','Debt',
+    'Income','ISA Income','Pension Tax-Free','Pension Taxable','Expenses','Tax','Surplus',
+    'Inv Return','Milestone Effect','Liquid Balance','Debt Payment'];
+  const rows = projection.map(r => [
+    r.year, r.age, Math.round(r.netWorth), Math.round(r.investPortfolio),
+    Math.round(r.totalNonInv), Math.round(r.totalAssets), Math.round(r.totalDebt),
+    Math.round(r.annualIncome), Math.round(r.isaIncome||0), Math.round(r.pensionTaxFree||0),
+    Math.round(r.pensionTaxable||0), Math.round(r.annualExpenses), Math.round(r.totalTax),
+    Math.round(r.savings), Math.round(r.investReturn), Math.round(r.milestoneEffect||0),
+    Math.round(r.liquidBalance||0), Math.round(r.debtPayment||0)
+  ].join(','));
+  const fname = getExportFilename('csv');
+  download(fname, [hdr.join(','), ...rows].join('\n'), 'text/csv');
+  showToast(`Projection exported as ${fname}`);
+}
+function importJSON(event){
+  const file=event.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const loaded=JSON.parse(e.target.result);
+      if(!loaded.profile||!loaded.income||!loaded.expenses)throw new Error('Invalid plan file structure.');
+      const def=getDefaultState();
+      state={
+        profile:{...def.profile,...loaded.profile},
+        income:loaded.income||def.income,
+        expenses:loaded.expenses||def.expenses,
+        assets:loaded.assets||def.assets,
+        debts:loaded.debts||def.debts,
+        investments:{allocation:loaded.investments?.allocation||def.investments.allocation,accounts:loaded.investments?.accounts||def.investments.accounts},
+        milestones:loaded.milestones||def.milestones,
+        progressLog:loaded.progressLog||[],
+        scenarios:loaded.scenarios||def.scenarios,
+        taxSettings:{
+          ukBands:loaded.taxSettings?.ukBands||defaultUKTaxBands(),
+          ukNIBands:loaded.taxSettings?.ukNIBands||defaultUKNIBands()
+        },
+        estateSettings:{...def.estateSettings,...(loaded.estateSettings||{})}
+      };
+      // Migrate old allocation field
+      state.investments.allocation=state.investments.allocation.map(a=>({...a,annualReturn:a.annualReturn||a.return||7}));
+      // Migrate old income/expense without fromAge/untilAge
+      state.income=state.income.map(i=>({fromAge:0,untilAge:999,...i}));
+      state.expenses=state.expenses.map(e=>({untilAge:99,...e}));
+      // Migrate old milestones without txAmount
+      state.milestones=state.milestones.map(m=>({txAmount:0,...m}));
+      // Migrate old accounts without rental/custom return fields
+      state.investments.accounts=state.investments.accounts.map(a=>({
+        customReturnRate:null, isRental:false, monthlyRentalIncome:0, linkedDebtId:null, ...a
+      }));
+      populateProfileForm();populateEstateForm();renderAllocationSliders();recalculate();
+      showView('dashboard');showToast('✓ Plan loaded & recalculated');
+    }catch(err){showToast('Failed: '+err.message,false);}
+    event.target.value='';
+  };reader.readAsText(file);
+}
+function resetData(){
+  if(!confirm('Reset to demo defaults?'))return;
+  state=getDefaultState();
+  populateProfileForm();populateEstateForm();renderAllocationSliders();recalculate();
+  showView('dashboard');showToast('Reset to demo defaults');
+}
+function download(filename,data,type){
+  const url=URL.createObjectURL(new Blob([data],{type}));
+  const a=Object.assign(document.createElement('a'),{href:url,download:filename});
+  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+}
+
+// =========================================================
+// TOAST
+// =========================================================
+function showToast(msg,ok=true){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.style.background=ok?'var(--accent)':'var(--red)';t.style.color=ok?'var(--text-inv)':'#fff';
+  t.classList.add('show');clearTimeout(t._timer);t._timer=setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// =========================================================
+// NAVIGATION
+// =========================================================
+function showView(id){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const view=document.getElementById('view-'+id);if(view)view.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>{if(n.getAttribute('onclick')?.includes(`'${id}'`))n.classList.add('active');});
+  const T={dashboard:'Dashboard',networth:'Net Worth',profile:'Profile & Assumptions',income:'Income & Expenses',assets:'Assets & Debts',investments:'Investments & Portfolio',montecarlo:'Monte Carlo Simulation',scenarios:'Scenario Analysis',cashflow:'Cash Flow Analysis',tax:'Tax Modelling',milestones:'Life Events & Milestones',estate:'Estate & Legacy Planning',progress:'Progress Tracking',export:'Export / Import'};
+  document.getElementById('topbar-title').textContent=T[id]||id;
+  if(id==='investments'){renderAllocationSliders();renderAccountsTable();}
+  if(id==='milestones')updateMilestones();
+  if(id==='progress')renderProgressTable();
+  if(id==='scenarios')updateScenarios();
+  if(id==='estate'){populateEstateForm();updateEstate();}
+  if(id==='tax')updateTax();
+  if(id==='cashflow'){
+    updateCashFlowKPIs();
+    setTimeout(()=>{
+      drawCFLifetimeChart();
+      buildCFTimeline();
+    },60);
+  }
+  if(id==='profile')populateProfileForm();
+  if(id==='networth'){
+    // Re-render liquid runway and debt payoff table in case projection changed
+    setTimeout(()=>{
+      const c=getThemeColors();
+      destroyChart('chart-liquid-runway');
+      const ages=projection.map(r=>r.age);
+      const liquidData=projection.map(r=>r.liquidBalance||0);
+      const runoutAge=projection[0]?.liquidRunoutAge;
+      charts['chart-liquid-runway']=new Chart(document.getElementById('chart-liquid-runway'),{type:'line',
+        data:{labels:ages,datasets:[
+          {label:'Liquid Balance (ISA/GIA/Cash)',data:liquidData,borderColor:c.teal,backgroundColor:`${c.teal}18`,fill:true,tension:.4,pointRadius:0,borderWidth:2.5},
+          {label:'Zero line',data:ages.map(()=>0),borderColor:`${c.red}60`,borderDash:[3,3],fill:false,pointRadius:0,borderWidth:1}
+        ]},options:cOpts()});
+      // Debt payoff table
+      const dpTbody=document.getElementById('debt-payoff-tbody');
+      if(dpTbody){
+        const payoffInfo=getDebtPayoffInfo();
+        const currentYear=new Date().getFullYear();
+        dpTbody.innerHTML=payoffInfo.map(d=>{
+          const yearsLeft=d.payoffYear?Math.max(0,d.payoffYear-currentYear):'—';
+          return`<tr><td><strong>${d.name}</strong></td><td class="mono neg">£${d.balance.toLocaleString()}</td><td class="mono">${d.interestRate}%</td><td class="mono">£${d.monthlyPayment.toLocaleString()}/mo</td><td class="mono ${d.payoffYear&&d.payoffYear-currentYear<=5?'pos':''}">${d.payoffYear||'Never'}</td><td class="mono">${d.payoffAge?'Age '+d.payoffAge:'—'}</td><td class="mono">${yearsLeft} yrs</td></tr>`;
+        }).join('')||'<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:20px">No debts entered</td></tr>';
+      }
+      // Liquid runout info text
+      const liqInfoEl=document.getElementById('liquid-runout-info');
+      if(liqInfoEl){
+        if(runoutAge){liqInfoEl.innerHTML=`<div class="alert warning">⚠ <strong>Liquid accounts (ISA, GIA, Cash) projected to run out at age ${runoutAge}.</strong> After this, drawdown must come from pensions or property. Consider sequencing withdrawals to preserve liquid assets longer.</div>`;}
+        else{const liquidNow=state.investments.accounts.filter(a=>a.type==='ISA'||a.type==='GIA'||a.type==='Cash').reduce((s,a)=>s+a.balance,0);liqInfoEl.innerHTML=liquidNow>0?`<div class="alert success">✓ Liquid accounts remain solvent throughout the model. Current liquid balance: <strong>${cur(liquidNow)}</strong>.</div>`:`<div class="alert info">ℹ No liquid accounts (ISA, GIA, Cash) entered. Add accounts of these types to track your liquidity runway.</div>`;}
+      }
+    },60);
+  }
+  if(id==='montecarlo'){setTimeout(()=>{destroyChart('cmcd');destroyChart('cmcf');destroyChart('csens');runMonteCarlo();},60);}
+}
+
+// =========================================================
+// INIT
+// =========================================================
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('log-date').value=new Date().toISOString().split('T')[0];
+  setMCMode('random');
+});
+populateProfileForm();
+populateEstateForm();
+renderAllocationSliders();
+recalculate();
+</script>
+</body>
+</html>
