@@ -202,7 +202,15 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15)}
 .toast{position:fixed;bottom:22px;right:22px;background:var(--accent);color:var(--text-inv);padding:11px 18px;border-radius:var(--radius-sm);font-size:13px;font-weight:700;box-shadow:var(--shadow);z-index:9999;transform:translateY(80px);opacity:0;transition:all .35s var(--ease)}
 .toast.show{transform:translateY(0);opacity:1}
 /* MISC */
-.chart-container{position:relative}
+[data-autosave="on"] #autosave-toggle::after{transform:translateX(20px);background:var(--accent)}
+[data-autosave="on"] #autosave-toggle-lbl{color:var(--accent)}
+[data-autosave="on"] #autosave-toggle{border-color:var(--accent2)}
+.recovery-banner{background:linear-gradient(135deg,rgba(74,222,128,.12),rgba(96,165,250,.08));border:1px solid var(--border2);border-radius:var(--radius);padding:16px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.recovery-banner .rb-icon{font-size:28px;flex-shrink:0}
+.recovery-banner .rb-body{flex:1;min-width:200px}
+.recovery-banner .rb-title{font-weight:700;font-size:14px;color:var(--text);margin-bottom:3px}
+.recovery-banner .rb-meta{font-size:11px;color:var(--text3);font-family:var(--font-m)}
+.recovery-banner .rb-actions{display:flex;gap:8px;flex-shrink:0}
 /* Sankey & cashflow timeline */
 .sk-node{transition:opacity .15s}.sk-node:hover{opacity:.82;cursor:default}
 .sk-flow{transition:opacity .15s}.sk-flow:hover{opacity:.55}
@@ -284,6 +292,8 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15)}
 
   <!-- DASHBOARD -->
   <div class="view active" id="view-dashboard">
+    <!-- Auto-save recovery banner — shown on load if saved data exists -->
+    <div id="autosave-recovery-banner" style="display:none;margin-bottom:16px"></div>
     <div class="grid-4 mb" style="grid-template-columns:repeat(5,1fr)">
       <div class="kpi green"><div class="kpi-header"><div class="kpi-label">Net Worth</div><span class="kpi-info" onclick="showInfo('networth')">i</span></div><div class="kpi-value" id="kpi-networth">£0</div><div class="kpi-sub">Investments + assets − debts</div></div>
       <div class="kpi amber"><div class="kpi-header"><div class="kpi-label">FIRE Target</div><span class="kpi-info" onclick="showInfo('fireTarget')">i</span></div><div class="kpi-value" id="kpi-fire">£0</div><div class="kpi-sub" id="kpi-fire-sub">SWR × inflated expenses</div></div>
@@ -682,7 +692,49 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15)}
 
   <!-- EXPORT -->
   <div class="view" id="view-export">
-    <div class="grid-2">
+
+    <!-- Auto-save status banner (populated by JS) -->
+    <div id="autosave-banner" style="display:none;margin-bottom:18px"></div>
+
+    <div class="grid-2" style="margin-bottom:18px">
+      <!-- Auto-save panel -->
+      <div class="panel">
+        <div class="panel-header"><span>🔄</span><span class="panel-title">Auto-Save to Browser</span></div>
+        <div class="panel-body">
+          <p style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.7">Automatically saves your plan to your browser's local storage after every change, so data isn't lost if you close the tab accidentally.</p>
+
+          <!-- Toggle row -->
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:14px">
+            <div>
+              <div style="font-weight:700;font-size:13px;color:var(--text)">Enable Auto-Save</div>
+              <div style="font-size:11px;color:var(--text3);font-family:var(--font-m);margin-top:2px">Saves on every recalculation</div>
+            </div>
+            <div class="theme-wrap" style="gap:8px">
+              <span id="autosave-toggle-lbl" style="font-size:11px;color:var(--text3);font-family:var(--font-m)">Off</span>
+              <div class="theme-toggle" id="autosave-toggle" onclick="toggleAutoSave()" title="Toggle auto-save"></div>
+            </div>
+          </div>
+
+          <!-- Status card -->
+          <div id="autosave-status-card" style="background:var(--info-bg);border:1px solid var(--info-border);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:14px;min-height:64px">
+            <div style="font-size:10px;color:var(--text3);font-family:var(--font-m);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:5px">Status</div>
+            <div id="autosave-status-text" style="font-size:13px;color:var(--text2)">Auto-save is off.</div>
+            <div id="autosave-status-meta" style="font-size:10px;color:var(--text3);font-family:var(--font-m);margin-top:4px"></div>
+          </div>
+
+          <!-- Action buttons -->
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn primary" id="autosave-now-btn" onclick="autoSaveNow()" style="flex:1;justify-content:center" disabled>💾 Save Now</button>
+            <button class="btn danger"  id="autosave-clear-btn" onclick="clearAutoSave()" style="flex:1;justify-content:center" disabled>🗑 Clear Saved Data</button>
+          </div>
+
+          <div style="margin-top:12px;font-size:11px;color:var(--text3);font-family:var(--font-m);line-height:1.7">
+            ⚠ Data is stored in <em>this browser only</em> and is cleared if you clear browser storage. Export to JSON for a portable backup.
+          </div>
+        </div>
+      </div>
+
+      <!-- Export panel -->
       <div class="panel">
         <div class="panel-header"><span>⬇</span><span class="panel-title">Export Data</span></div>
         <div class="panel-body">
@@ -698,18 +750,26 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15)}
           </div>
         </div>
       </div>
-      <div class="panel">
-        <div class="panel-header"><span>⬆</span><span class="panel-title">Import / Restore</span></div>
-        <div class="panel-body">
-          <p style="font-size:13px;color:var(--text2);margin-bottom:18px;line-height:1.8">Load a previously exported JSON plan. All data including custom tax bands will be restored and the model recalculates immediately.</p>
-          <input type="file" id="import-file" accept=".json" style="display:none" onchange="importJSON(event)">
-          <button class="btn primary" onclick="document.getElementById('import-file').click()" style="justify-content:center;width:100%;margin-bottom:18px">📂 Load JSON Plan File</button>
-          <div class="divider"></div>
-          <p style="font-size:12px;color:var(--text3);margin-bottom:10px">⚠ Resets all data to built-in demo values.</p>
-          <button class="btn danger" onclick="resetData()" style="justify-content:center;width:100%">🗑 Reset to Demo Defaults</button>
+    </div>
+
+    <!-- Import panel — full width -->
+    <div class="panel">
+      <div class="panel-header"><span>⬆</span><span class="panel-title">Import / Restore</span></div>
+      <div class="panel-body">
+        <div class="grid-2">
+          <div>
+            <p style="font-size:13px;color:var(--text2);margin-bottom:18px;line-height:1.8">Load a previously exported JSON plan. All data including custom tax bands will be restored and the model recalculates immediately.</p>
+            <input type="file" id="import-file" accept=".json" style="display:none" onchange="importJSON(event)">
+            <button class="btn primary" onclick="document.getElementById('import-file').click()" style="justify-content:center;width:100%">📂 Load JSON Plan File</button>
+          </div>
+          <div>
+            <p style="font-size:12px;color:var(--text3);margin-bottom:12px;line-height:1.7">⚠ Resets all data to the built-in demo values. Export or enable auto-save first if you want to preserve your current plan.</p>
+            <button class="btn danger" onclick="resetData()" style="justify-content:center;width:100%">🗑 Reset to Demo Defaults</button>
+          </div>
         </div>
       </div>
     </div>
+
   </div>
 
   </div><!-- /content -->
@@ -718,6 +778,252 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15)}
 <script>
 'use strict';
 // =========================================================
+// AUTO-SAVE SYSTEM
+// =========================================================
+const AS_KEY      = 'fire_starter_autosave';
+const AS_META_KEY = 'fire_starter_autosave_meta';
+const AS_PREF_KEY = 'fire_starter_autosave_enabled';
+const AS_THEME_KEY= 'fire_starter_theme';
+
+let autoSaveEnabled = false;
+let _autoSaveTimer  = null;
+
+function toggleAutoSave() {
+  autoSaveEnabled = !autoSaveEnabled;
+  localStorage.setItem(AS_PREF_KEY, autoSaveEnabled ? '1' : '0');
+  document.documentElement.setAttribute('data-autosave', autoSaveEnabled ? 'on' : 'off');
+  const lbl = document.getElementById('autosave-toggle-lbl');
+  if (lbl) lbl.textContent = autoSaveEnabled ? 'On' : 'Off';
+  const nowBtn   = document.getElementById('autosave-now-btn');
+  const clearBtn = document.getElementById('autosave-clear-btn');
+  if (nowBtn)   nowBtn.disabled   = !autoSaveEnabled;
+  if (clearBtn) clearBtn.disabled = !autoSaveEnabled && !localStorage.getItem(AS_KEY);
+  updateAutoSaveStatusCard();
+  if (autoSaveEnabled) {
+    autoSave();
+    showToast('Auto-save enabled — plan will be saved after every change');
+  } else {
+    showToast('Auto-save disabled');
+  }
+}
+
+// Debounced save — called from recalculate()
+function scheduleAutoSave() {
+  if (!autoSaveEnabled) return;
+  clearTimeout(_autoSaveTimer);
+  _autoSaveTimer = setTimeout(autoSave, 600);
+}
+
+function autoSave() {
+  if (!autoSaveEnabled) return;
+  try {
+    const payload = JSON.stringify(state);
+    const meta = {
+      savedAt:   new Date().toISOString(),
+      size:      payload.length,
+      age:       state.profile.age,
+      netWorth:  projection.length > 0 ? projection[0].netWorth : 0,
+      theme:     currentTheme
+    };
+    localStorage.setItem(AS_KEY,      payload);
+    localStorage.setItem(AS_META_KEY, JSON.stringify(meta));
+    localStorage.setItem(AS_THEME_KEY, currentTheme);
+    updateAutoSaveStatusCard();
+    updateAutoSaveIndicator(); // topbar dot
+  } catch(e) {
+    // localStorage might be full or blocked
+    console.warn('Auto-save failed:', e.message);
+    updateAutoSaveStatusCard(true);
+  }
+}
+
+function autoSaveNow() {
+  if (!autoSaveEnabled) return;
+  autoSave();
+  showToast('Plan saved to browser storage');
+}
+
+function clearAutoSave() {
+  if (!confirm('Clear the auto-saved data from your browser? This cannot be undone.')) return;
+  localStorage.removeItem(AS_KEY);
+  localStorage.removeItem(AS_META_KEY);
+  updateAutoSaveStatusCard();
+  const clearBtn = document.getElementById('autosave-clear-btn');
+  if (clearBtn) clearBtn.disabled = true;
+  showToast('Auto-save data cleared');
+}
+
+function updateAutoSaveStatusCard(error = false) {
+  const textEl = document.getElementById('autosave-status-text');
+  const metaEl = document.getElementById('autosave-status-meta');
+  if (!textEl) return;
+
+  const raw = localStorage.getItem(AS_META_KEY);
+  const clearBtn = document.getElementById('autosave-clear-btn');
+
+  if (error) {
+    textEl.style.color = 'var(--red)';
+    textEl.textContent = '⚠ Save failed — browser storage may be full or blocked.';
+    if (metaEl) metaEl.textContent = '';
+    return;
+  }
+
+  if (!autoSaveEnabled && !raw) {
+    textEl.style.color = 'var(--text2)';
+    textEl.textContent = 'Auto-save is off. Enable it to protect your data.';
+    if (metaEl) metaEl.textContent = '';
+    if (clearBtn) clearBtn.disabled = true;
+    return;
+  }
+
+  if (raw) {
+    const meta = JSON.parse(raw);
+    const d    = new Date(meta.savedAt);
+    const when = d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short', year:'numeric' })
+               + ' at ' + d.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+    const kb   = (meta.size / 1024).toFixed(1);
+    textEl.style.color = autoSaveEnabled ? 'var(--accent)' : 'var(--text2)';
+    textEl.textContent = autoSaveEnabled ? '✓ Auto-save active — plan saved after every change.' : '⏸ Saved data exists (auto-save is off).';
+    if (metaEl) metaEl.textContent = `Last saved: ${when} · ${kb} KB · Age ${meta.age}`;
+    if (clearBtn) clearBtn.disabled = false;
+  } else {
+    textEl.style.color = autoSaveEnabled ? 'var(--amber)' : 'var(--text2)';
+    textEl.textContent = autoSaveEnabled ? '⏳ Waiting for first save…' : 'Auto-save is off.';
+    if (metaEl) metaEl.textContent = '';
+    if (clearBtn) clearBtn.disabled = true;
+  }
+}
+
+// Small indicator dot in the topbar showing live save status
+function updateAutoSaveIndicator() {
+  let dot = document.getElementById('autosave-dot');
+  if (!dot) {
+    dot = document.createElement('div');
+    dot.id = 'autosave-dot';
+    dot.title = 'Auto-save active';
+    dot.style.cssText = 'width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent);flex-shrink:0;cursor:pointer;transition:var(--t)';
+    dot.onclick = () => showView('export');
+    const topbar = document.querySelector('.topbar');
+    if (topbar) topbar.insertBefore(dot, topbar.querySelector('.theme-wrap'));
+  }
+  const raw  = localStorage.getItem(AS_META_KEY);
+  const meta = raw ? JSON.parse(raw) : null;
+  dot.style.display      = autoSaveEnabled ? 'block' : 'none';
+  dot.title              = meta ? `Auto-saved ${new Date(meta.savedAt).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}` : 'Auto-save active';
+}
+
+// Recovery banner shown on load when saved data exists
+function tryLoadAutoSave() {
+  const raw     = localStorage.getItem(AS_KEY);
+  const metaRaw = localStorage.getItem(AS_META_KEY);
+  if (!raw || !metaRaw) return false;
+
+  try {
+    const meta = JSON.parse(metaRaw);
+    const d    = new Date(meta.savedAt);
+    const when = d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short', year:'numeric' })
+               + ' at ' + d.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+    const kb   = (meta.size / 1024).toFixed(1);
+    const nw   = meta.netWorth ? '£' + Math.round(meta.netWorth).toLocaleString() : '';
+
+    // Show recovery banner on the dashboard
+    const banner = document.getElementById('autosave-recovery-banner');
+    if (banner) {
+      banner.style.display = 'block';
+      banner.innerHTML = `
+        <div class="recovery-banner">
+          <div class="rb-icon">💾</div>
+          <div class="rb-body">
+            <div class="rb-title">Auto-saved plan found</div>
+            <div class="rb-meta">Saved ${when} · ${kb} KB · Age ${meta.age}${nw ? ' · Net Worth ' + nw : ''}</div>
+          </div>
+          <div class="rb-actions">
+            <button class="btn primary" onclick="restoreAutoSave()">↩ Restore</button>
+            <button class="btn" onclick="dismissRecoveryBanner()">✕ Dismiss</button>
+          </div>
+        </div>`;
+    }
+    return true;
+  } catch(e) {
+    return false;
+  }
+}
+
+function restoreAutoSave() {
+  const raw = localStorage.getItem(AS_KEY);
+  if (!raw) { showToast('No auto-save data found', false); return; }
+  try {
+    const loaded = JSON.parse(raw);
+    applyLoadedState(loaded);
+    dismissRecoveryBanner();
+    showToast('✓ Plan restored from auto-save');
+  } catch(e) {
+    showToast('Failed to restore: ' + e.message, false);
+  }
+}
+
+function dismissRecoveryBanner() {
+  const b = document.getElementById('autosave-recovery-banner');
+  if (b) b.style.display = 'none';
+  const b2 = document.getElementById('autosave-banner');
+  if (b2) b2.style.display = 'none';
+}
+
+// Shared state-loading logic used by both importJSON and restoreAutoSave
+function applyLoadedState(loaded) {
+  if (!loaded.profile || !loaded.income || !loaded.expenses)
+    throw new Error('Invalid plan structure.');
+
+  const def = getDefaultState();
+  state = {
+    profile: {
+      ...def.profile, ...loaded.profile,
+      fireMultiple: loaded.profile?.fireMultiple || +(100 / (loaded.profile?.swr || 4)).toFixed(2)
+    },
+    income:      loaded.income      || def.income,
+    expenses:    loaded.expenses    || def.expenses,
+    assets:      loaded.assets      || def.assets,
+    debts:       loaded.debts       || def.debts,
+    investments: {
+      allocation: loaded.investments?.allocation || def.investments.allocation,
+      accounts:   loaded.investments?.accounts   || def.investments.accounts
+    },
+    milestones:  loaded.milestones  || def.milestones,
+    progressLog: loaded.progressLog || [],
+    scenarios:   loaded.scenarios   || def.scenarios,
+    taxSettings: {
+      ukBands:   loaded.taxSettings?.ukBands   || defaultUKTaxBands(),
+      ukNIBands: loaded.taxSettings?.ukNIBands || defaultUKNIBands()
+    },
+    estateSettings: { ...def.estateSettings, ...(loaded.estateSettings || {}) }
+  };
+
+  // Migrations
+  if (!state.profile.fireMultiple) state.profile.fireMultiple = +(100/state.profile.swr).toFixed(2);
+  state.profile.swr = 100 / state.profile.fireMultiple;
+  state.investments.allocation = state.investments.allocation.map(a => ({...a, annualReturn: a.annualReturn || a.return || 7}));
+  state.income    = state.income.map(i    => ({ fromAge:0, untilAge:999, ...i }));
+  state.expenses  = state.expenses.map(e  => ({ untilAge:99, ...e }));
+  state.milestones= state.milestones.map(m=> ({ txAmount:0, ...m }));
+  state.investments.accounts = state.investments.accounts.map(a => ({
+    customReturnRate:null, isRental:false, monthlyRentalIncome:0, linkedDebtId:null, ...a
+  }));
+
+  // Restore theme if saved
+  if (loaded._theme) {
+    currentTheme = loaded._theme;
+    document.documentElement.setAttribute('data-theme', currentTheme);
+    document.getElementById('theme-lbl').textContent = currentTheme === 'dark' ? 'Dark' : 'Light';
+  }
+
+  populateProfileForm();
+  populateEstateForm();
+  renderAllocationSliders();
+  recalculate();
+  showView('dashboard');
+}
+
+// =========================================================
 // THEME
 // =========================================================
 let currentTheme = 'dark';
@@ -725,6 +1031,7 @@ function toggleTheme() {
   currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', currentTheme);
   document.getElementById('theme-lbl').textContent = currentTheme === 'dark' ? 'Dark' : 'Light';
+  localStorage.setItem(AS_THEME_KEY, currentTheme);
   setTimeout(updateCharts, 60);
 }
 
@@ -1380,7 +1687,7 @@ function buildProjection(ov={}) {
   return proj;
 }
 
-function recalculate() { projection=buildProjection(); updateAll(); }
+function recalculate() { projection=buildProjection(); updateAll(); scheduleAutoSave(); }
 function updateAll() { updateKPIs();updateCharts();updateTables();updateTax();updateEstate();updateMilestones();updateCashFlowKPIs(); }
 
 // =========================================================
@@ -3273,43 +3580,8 @@ function importJSON(event){
   reader.onload=e=>{
     try{
       const loaded=JSON.parse(e.target.result);
-      if(!loaded.profile||!loaded.income||!loaded.expenses)throw new Error('Invalid plan file structure.');
-      const def=getDefaultState();
-      state={
-        profile:{...def.profile,...loaded.profile},
-        income:loaded.income||def.income,
-        expenses:loaded.expenses||def.expenses,
-        assets:loaded.assets||def.assets,
-        debts:loaded.debts||def.debts,
-        investments:{allocation:loaded.investments?.allocation||def.investments.allocation,accounts:loaded.investments?.accounts||def.investments.accounts},
-        milestones:loaded.milestones||def.milestones,
-        progressLog:loaded.progressLog||[],
-        scenarios:loaded.scenarios||def.scenarios,
-        taxSettings:{
-          ukBands:loaded.taxSettings?.ukBands||defaultUKTaxBands(),
-          ukNIBands:loaded.taxSettings?.ukNIBands||defaultUKNIBands()
-        },
-        estateSettings:{...def.estateSettings,...(loaded.estateSettings||{})}
-      };
-      // Migrate fireMultiple — if old plan only had SWR, derive multiple
-      if (!state.profile.fireMultiple) {
-        state.profile.fireMultiple = +(100 / state.profile.swr).toFixed(2);
-      }
-      // Keep SWR in sync with multiple
-      state.profile.swr = 100 / state.profile.fireMultiple;
-      // Migrate old allocation field
-      state.investments.allocation=state.investments.allocation.map(a=>({...a,annualReturn:a.annualReturn||a.return||7}));
-      // Migrate old income/expense without fromAge/untilAge
-      state.income=state.income.map(i=>({fromAge:0,untilAge:999,...i}));
-      state.expenses=state.expenses.map(e=>({untilAge:99,...e}));
-      // Migrate old milestones without txAmount
-      state.milestones=state.milestones.map(m=>({txAmount:0,...m}));
-      // Migrate old accounts without rental/custom return fields
-      state.investments.accounts=state.investments.accounts.map(a=>({
-        customReturnRate:null, isRental:false, monthlyRentalIncome:0, linkedDebtId:null, ...a
-      }));
-      populateProfileForm();populateEstateForm();renderAllocationSliders();recalculate();
-      showView('dashboard');showToast('✓ Plan loaded & recalculated');
+      applyLoadedState(loaded);
+      showToast('✓ Plan loaded & recalculated');
     }catch(err){showToast('Failed: '+err.message,false);}
     event.target.value='';
   };reader.readAsText(file);
@@ -3359,6 +3631,7 @@ function showView(id){
     },60);
   }
   if(id==='profile')populateProfileForm();
+  if(id==='export')updateAutoSaveStatusCard();
   if(id==='networth'){
     setTimeout(()=>{
       buildNWStackedChart();
@@ -3397,8 +3670,38 @@ function showView(id){
 // =========================================================
 document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('log-date').value=new Date().toISOString().split('T')[0];
+
+  // Restore theme preference from localStorage
+  const savedTheme = localStorage.getItem(AS_THEME_KEY);
+  if (savedTheme && savedTheme !== currentTheme) {
+    currentTheme = savedTheme;
+    document.documentElement.setAttribute('data-theme', currentTheme);
+    document.getElementById('theme-lbl').textContent = currentTheme === 'dark' ? 'Dark' : 'Light';
+  }
+
+  // Restore auto-save preference
+  const savedPref = localStorage.getItem(AS_PREF_KEY);
+  if (savedPref === '1') {
+    autoSaveEnabled = true;
+    document.documentElement.setAttribute('data-autosave', 'on');
+    const lbl = document.getElementById('autosave-toggle-lbl');
+    if (lbl) lbl.textContent = 'On';
+    const nowBtn   = document.getElementById('autosave-now-btn');
+    const clearBtn = document.getElementById('autosave-clear-btn');
+    if (nowBtn)   nowBtn.disabled   = false;
+    if (clearBtn) clearBtn.disabled = !localStorage.getItem(AS_KEY);
+    updateAutoSaveIndicator();
+  }
+
+  // Update the status card (reads from localStorage, no recalculate needed)
+  updateAutoSaveStatusCard();
+
+  // Show recovery banner if auto-save data exists
+  tryLoadAutoSave();
+
   setMCMode('random');
 });
+
 populateProfileForm();
 populateEstateForm();
 renderAllocationSliders();
