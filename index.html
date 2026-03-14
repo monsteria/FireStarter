@@ -339,7 +339,7 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15)}
         <div class="tab-list" style="margin:0"><button class="tab-btn active" onclick="setTableRange(10,this)">10yr</button><button class="tab-btn" onclick="setTableRange(20,this)">20yr</button><button class="tab-btn" onclick="setTableRange(999,this)">Full</button></div>
       </div>
       <div class="panel-body" style="padding:0;overflow-x:auto">
-        <table class="data-table"><thead><tr><th>Year</th><th>Age</th><th>Net Worth</th><th>Investments</th><th>Income</th><th>ISA (tax-free)</th><th>Pension TF</th><th>Expenses</th><th>Tax</th><th>Surplus</th><th>Inv Return</th><th>Status</th></tr></thead><tbody id="projection-tbody"></tbody></table>
+        <table class="data-table"><thead><tr><th>Year</th><th>Age</th><th>Net Worth</th><th>Investments</th><th>Income</th><th>Inv Income</th><th>ISA (tax-free)</th><th>Pension TF</th><th>Expenses</th><th>Tax</th><th>Surplus</th><th>Inv Return</th><th>Status</th></tr></thead><tbody id="projection-tbody"></tbody></table>
       </div>
     </div>
   </div>
@@ -519,7 +519,7 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15)}
       <div class="panel">
         <div class="panel-header"><span>💰</span><span class="panel-title">Investment Accounts</span><button class="btn sm" style="margin-left:auto" onclick="openModal('account')">+ Add</button></div>
         <div class="panel-body" style="padding:0;overflow-x:auto">
-        <table class="data-table"><thead><tr><th>Account</th><th>Balance</th><th>Monthly Contrib</th><th>Type</th><th>Return Rate</th><th>Actions</th></tr></thead><tbody id="accounts-tbody"></tbody></table>
+        <table class="data-table"><thead><tr><th>Account</th><th>Balance</th><th>Monthly Contrib</th><th>Type</th><th>Return Rate</th><th>Return Mode</th><th>Actions</th></tr></thead><tbody id="accounts-tbody"></tbody></table>
         </div>
       </div>
     </div>
@@ -1337,7 +1337,8 @@ function applyLoadedState(loaded) {
   state.expenses  = state.expenses.map(e  => ({ untilAge:99, ...e }));
   state.milestones= state.milestones.map(m=> ({ txAmount:0, ...m }));
   state.investments.accounts = state.investments.accounts.map(a => ({
-    customReturnRate:null, isRental:false, monthlyRentalIncome:0, linkedDebtId:null, ...a
+    customReturnRate:null, isRental:false, monthlyRentalIncome:0, linkedDebtId:null,
+    incomeMode:'reinvest', incomeFromAge:null, incomeToAge:null, ...a
   }));
 
   // Restore theme if saved
@@ -1578,8 +1579,8 @@ function getDefaultState() {
       // Each account can have: customReturnRate (overrides blended), isRental flag,
       // monthlyRentalIncome, linkedDebtId (mortgage linked to this property)
       accounts: [
-        { id: 1, name: 'Stocks & Shares ISA', balance: 45000, monthlyContrib: 1000, type: 'ISA',     customReturnRate: null, isRental: false, monthlyRentalIncome: 0, linkedDebtId: null },
-        { id: 2, name: 'Workplace Pension',   balance: 28000, monthlyContrib: 600,  type: 'Pension',  customReturnRate: null, isRental: false, monthlyRentalIncome: 0, linkedDebtId: null }
+        { id: 1, name: 'Stocks & Shares ISA', balance: 45000, monthlyContrib: 1000, type: 'ISA',     customReturnRate: null, isRental: false, monthlyRentalIncome: 0, linkedDebtId: null, incomeMode: 'reinvest', incomeFromAge: null, incomeToAge: null },
+        { id: 2, name: 'Workplace Pension',   balance: 28000, monthlyContrib: 600,  type: 'Pension',  customReturnRate: null, isRental: false, monthlyRentalIncome: 0, linkedDebtId: null, incomeMode: 'reinvest', incomeFromAge: null, incomeToAge: null }
       ]
     },
     // CHANGE 4: milestones now support asset transactions
@@ -1731,13 +1732,18 @@ function calcTax(income, regime, breakdown = null) {
 // Change 4: Build income breakdown for a given projection year
 // Separates ISA drawdown, pension drawdown (with 25% tax-free), and other income
 function buildIncomeBreakdown(annualIncome, age) {
+  const p = state.profile;
   let isaIncome = 0, pensionRaw = 0, otherIncome = 0;
+  const y = age - p.age; // years from today
   state.income.forEach(inc => {
     const fa = inc.fromAge || 0;
     const ua = inc.untilAge || 999;
     if (age >= fa && age < ua) {
-      const yearsSinceStart = Math.max(0, age - fa);
-      const amount = inc.monthly * 12 * Math.pow(1 + ((inc.growthRate || 3) / 100), yearsSinceStart);
+      // Compound from when stream activates in the projection, not from fromAge
+      const streamStartY = Math.max(0, fa - p.age);
+      const growthYears  = Math.max(0, y - streamStartY);
+      const growthRate   = inc.growthRate != null ? inc.growthRate : p.incomeGrowth;
+      const amount = inc.monthly * 12 * Math.pow(1 + (growthRate / 100), growthYears);
       if (inc.type === 'ISA Drawdown') {
         isaIncome += amount;
       } else if (inc.type === 'Pension Drawdown' || inc.type === 'Pension') {
@@ -1747,13 +1753,28 @@ function buildIncomeBreakdown(annualIncome, age) {
       }
     }
   });
-  // Add state pension to otherIncome (state pension is taxable income, no NI above SPA)
-  if (age >= state.profile.statePensionAge) otherIncome += state.profile.statePension * 12;
+  // Add state pension to otherIncome (taxable, no NI above SPA)
+  if (age >= p.statePensionAge) otherIncome += p.statePension * 12;
 
-  // Change 4: 25% of pension drawdown is tax-free (PCLS treatment on drawdown basis)
-  // In drawdown, each payment is 25% tax-free / 75% taxable
-  const pensionTaxFree  = pensionRaw * 0.25;
-  const pensionTaxable  = pensionRaw * 0.75;
+  // Include income-mode investment account returns at this age
+  state.investments.accounts.forEach(acct => {
+    const fa = acct.incomeFromAge != null ? acct.incomeFromAge : null;
+    const ua = acct.incomeToAge   != null ? acct.incomeToAge   : null;
+    const inWindow = (fa === null || age >= fa) && (ua === null || age < ua);
+    if (acct.incomeMode === 'income' && inWindow) {
+      const ret = acct.balance * accountReturnRate(acct);
+      if (acct.type === 'ISA') {
+        isaIncome  += ret;
+      } else if (acct.type === 'Pension' || acct.type === 'SIPP' || acct.type === '401k' || acct.type === 'IRA') {
+        pensionRaw += ret;
+      } else {
+        otherIncome += ret;
+      }
+    }
+  });
+
+  const pensionTaxFree = pensionRaw * 0.25;
+  const pensionTaxable = pensionRaw * 0.75;
 
   return { isa: isaIncome, pensionTaxFree, pensionTaxable, other: otherIncome,
            total: isaIncome + pensionRaw + otherIncome };
@@ -1876,13 +1897,21 @@ function buildProjection(ov={}) {
     const retired = age >= p.retireAge;
 
     // --- Income: fromAge AND untilAge both respected ---
+    // growthYears = years elapsed since projection start (y), NOT since fromAge.
+    // The monthly amount is what the stream pays *today* (or at the age it begins,
+    // if fromAge > currentAge). We compound forward from when the stream is first
+    // active in the projection, so at y=0 the multiplier is always 1.0.
     let annualIncome = 0;
     let isaAnnual = 0, pensionAnnual = 0, otherAnnual = 0;
     state.income.forEach(inc => {
       const fa = inc.fromAge || 0;
       const ua = inc.untilAge || 999;
       if (age >= fa && age < ua) {
-        const amount = inc.monthly * 12 * Math.pow(1 + ((inc.growthRate || p.incomeGrowth) / 100), Math.max(0, age - fa));
+        // Compound only from when the stream becomes active in the projection
+        const streamStartY = Math.max(0, fa - p.age); // y-index when stream first activates
+        const growthYears  = Math.max(0, y - streamStartY);
+        const growthRate   = inc.growthRate != null ? inc.growthRate : p.incomeGrowth;
+        const amount = inc.monthly * 12 * Math.pow(1 + (growthRate / 100), growthYears);
         annualIncome += amount;
         if (inc.type === 'ISA Drawdown') isaAnnual += amount;
         else if (inc.type === 'Pension Drawdown' || inc.type === 'Pension') pensionAnnual += amount;
@@ -1906,13 +1935,14 @@ function buildProjection(ov={}) {
       otherAnnual  += sp;
     }
 
-    // Change 3+4: Build income breakdown for tax calculation
-    const pensionTaxFree = pensionAnnual * 0.25;
-    const pensionTaxable = pensionAnnual * 0.75;
-    const breakdown = { isa: isaAnnual, pensionTaxFree, pensionTaxable, other: otherAnnual };
-    const taxResult  = calcTax(annualIncome, p.taxRegime, breakdown);
-    const totalTax   = taxResult.income + taxResult.ni;
-    const netIncome  = annualIncome - totalTax;
+    // Initial (provisional) tax breakdown — uses income streams only.
+    // Will be recalculated below after investmentIncome is determined.
+    let pensionTaxFree = pensionAnnual * 0.25;
+    let pensionTaxable = pensionAnnual * 0.75;
+    let breakdown = { isa: isaAnnual, pensionTaxFree, pensionTaxable, other: otherAnnual };
+    let taxResult  = calcTax(annualIncome, p.taxRegime, breakdown);
+    let totalTax   = taxResult.income + taxResult.ni;
+    let netIncome  = annualIncome - totalTax;
 
     // --- Expenses: fromAge and untilAge ---
     let annualExpenses = 0;
@@ -1951,40 +1981,138 @@ function buildProjection(ov={}) {
       withdrawal = Math.max(0, annualExpenses - netIncome);
     }
 
-    // Change 1: Update each account balance with its own return rate
+    // ── Investment accounts: reinvest vs income mode ───────────────────────────
+    // Per-account: if incomeMode='income' and age is within [incomeFromAge, incomeToAge),
+    // the return amount flows to investmentIncome instead of being reinvested.
+    // investmentIncome is then added to annualIncome for cashflow and tax purposes.
+    // For tax treatment: ISA returns are tax-free; Pension returns use 25/75 PCLS split;
+    // GIA/other returns are taxable as dividend/interest income.
     let totalInvestPortfolio = 0;
     let totalInvestReturn    = 0;
+    let investmentIncome     = 0;     // step 6: accumulate income-mode returns
+    let invIncomeISA         = 0;     // step 3: ISA portion (tax-free)
+    let invIncomePension     = 0;     // step 3: Pension portion (25/75 split)
+    let invIncomeOther       = 0;     // step 3: GIA/other (taxable)
+
     accountBalances = accountBalances.map((bal, ai) => {
       const acct = state.investments.accounts[ai];
-      const R = accountReturnRate(acct) + rAdj;
-      const ret = bal * R;
+      const R    = accountReturnRate(acct) + rAdj;
+      const ret  = bal * R;             // step 4: returnAmount = balance * returnRate
       totalInvestReturn += ret;
+
+      // Determine effective income mode for this year
+      const fa = acct.incomeFromAge != null ? acct.incomeFromAge : null;
+      const ua = acct.incomeToAge   != null ? acct.incomeToAge   : null;
+      const inWindow = (fa === null || age >= fa) && (ua === null || age < ua);
+      const effectiveMode = (acct.incomeMode === 'income' && inWindow) ? 'income' : 'reinvest';
+
       let newBal;
-      if (!retired) {
-        newBal = Math.max(0, bal + ret + acct.monthlyContrib * 12 +
-          Math.max(0, (savings - monthlyContribs * 12) * (bal / Math.max(1, accountBalances.reduce((s,b)=>s+b,0))) ));
+      if (effectiveMode === 'income') {
+        // step 6: add return to investmentIncome, NOT back to balance
+        // step 7: balance only receives contributions
+        investmentIncome += Math.max(0, ret);
+        // Classify by account type for tax treatment
+        if (acct.type === 'ISA' || acct.type === 'GIA' && acct.type === 'ISA') {
+          invIncomeISA += Math.max(0, ret);
+        } else if (acct.type === 'Pension' || acct.type === 'SIPP' || acct.type === '401k' || acct.type === 'IRA') {
+          invIncomePension += Math.max(0, ret);
+        } else {
+          invIncomeOther += Math.max(0, ret);
+        }
+        // Balance only grows by contributions (no reinvestment of returns)
+        if (!retired) {
+          newBal = Math.max(0, bal + acct.monthlyContrib * 12
+            + Math.max(0, (savings - monthlyContribs * 12) * (bal / Math.max(1, accountBalances.reduce((s,b)=>s+b,0)))));
+        } else {
+          const withdrawShare = bal / Math.max(1, accountBalances.reduce((s,b)=>s+b,0));
+          newBal = Math.max(0, bal - withdrawal * withdrawShare);
+        }
       } else {
-        // Withdraw proportionally from each account (simplified)
-        const withdrawShare = bal / Math.max(1, accountBalances.reduce((s,b)=>s+b,0));
-        newBal = Math.max(0, bal + ret - withdrawal * withdrawShare);
+        // step 5: reinvest — standard compound growth
+        if (!retired) {
+          newBal = Math.max(0, bal + ret + acct.monthlyContrib * 12
+            + Math.max(0, (savings - monthlyContribs * 12) * (bal / Math.max(1, accountBalances.reduce((s,b)=>s+b,0)))));
+        } else {
+          const withdrawShare = bal / Math.max(1, accountBalances.reduce((s,b)=>s+b,0));
+          newBal = Math.max(0, bal + ret - withdrawal * withdrawShare);
+        }
       }
       newBal += milestoneEffect * (bal / Math.max(1, accountBalances.reduce((s,b)=>s+b,0)));
       totalInvestPortfolio += newBal;
       return newBal;
     });
+
     if (accountBalances.length === 0) {
       totalInvestPortfolio = 0;
-      totalInvestReturn = 0;
+      totalInvestReturn    = 0;
     }
     const investPortfolio = totalInvestPortfolio;
     const investReturn    = totalInvestReturn;
 
-    // Change 5: Track liquid cash balance (ISA + GIA + Cash type accounts)
+    // step 8: add investmentIncome to annualIncome and cashflow
+    // Classify by type for correct tax treatment
+    if (investmentIncome > 0) {
+      annualIncome  += investmentIncome;
+      // ISA investment income: tax-free
+      invIncomeISA  = 0; // recalculate cleanly
+      invIncomePension = 0;
+      invIncomeOther   = 0;
+      state.investments.accounts.forEach((acct, ai) => {
+        const fa2 = acct.incomeFromAge != null ? acct.incomeFromAge : null;
+        const ua2 = acct.incomeToAge   != null ? acct.incomeToAge   : null;
+        const inW = (fa2 === null || age >= fa2) && (ua2 === null || age < ua2);
+        if (acct.incomeMode === 'income' && inW) {
+          const ret2 = Math.max(0, accountBalances[ai] * 0); // already computed above — use proportional share
+          const share = investmentIncome > 0 ? (accountBalances[ai] / Math.max(1, totalInvestPortfolio)) : 0;
+          const acctInc = investmentIncome * share; // approx per-account share
+          if (acct.type === 'ISA') {
+            invIncomeISA += acctInc;
+          } else if (acct.type === 'Pension' || acct.type === 'SIPP' || acct.type === '401k' || acct.type === 'IRA') {
+            invIncomePension += acctInc;
+          } else {
+            invIncomeOther += acctInc;
+          }
+        }
+      });
+      // Update tax breakdown to include investment income with correct treatment
+      isaAnnual     += invIncomeISA;
+      pensionAnnual += invIncomePension;
+      otherAnnual   += invIncomeOther;
+
+      // step 8 (final): recalculate tax with full income including investment income
+      pensionTaxFree = pensionAnnual * 0.25;
+      pensionTaxable = pensionAnnual * 0.75;
+      breakdown  = { isa: isaAnnual, pensionTaxFree, pensionTaxable, other: otherAnnual };
+      taxResult  = calcTax(annualIncome, p.taxRegime, breakdown);
+      totalTax   = taxResult.income + taxResult.ni;
+      netIncome  = annualIncome - totalTax;
+
+      // Recalculate savings/withdrawal with updated netIncome
+      if (!retired) {
+        savings = netIncome - annualExpenses - debtPayment + (ov.savingsBoost || 0) * 12;
+      } else {
+        withdrawal = Math.max(0, annualExpenses - netIncome);
+      }
+    }
+
+    // step 9: liquid balance includes income-mode investment returns received this year
+    // (they are cash in hand, not locked in the portfolio)
     let liquidBalance = 0;
     accountBalances.forEach((bal, ai) => {
       const acct = state.investments.accounts[ai];
       if (acct.type === 'ISA' || acct.type === 'GIA' || acct.type === 'Cash') {
         liquidBalance += bal;
+      }
+    });
+    // Income-mode returns from liquid-type accounts flow into liquid balance
+    state.investments.accounts.forEach((acct, ai) => {
+      const fa2 = acct.incomeFromAge != null ? acct.incomeFromAge : null;
+      const ua2 = acct.incomeToAge   != null ? acct.incomeToAge   : null;
+      const inW = (fa2 === null || age >= fa2) && (ua2 === null || age < ua2);
+      if (acct.incomeMode === 'income' && inW) {
+        if (acct.type === 'ISA' || acct.type === 'GIA') {
+          liquidBalance += Math.max(0, accountBalances[ai] * accountReturnRate(acct));
+        }
       }
     });
     if (liquidBalance <= 0 && liquidRunoutAge === null && (retired || y > 0)) {
@@ -2003,10 +2131,15 @@ function buildProjection(ov={}) {
     const fireTarget  = annualExpenses * (1 / effectiveSWR);
     const fireReached = investPortfolio >= fireTarget && investPortfolio > 0;
 
+    // liquidIncome = what actually lands in the bank: income-tab + rental + state pension + income-mode returns.
+    // Reinvested portfolio growth is NOT included. Used by cashflow view only.
+    const liquidIncome = annualIncome; // annualIncome already excludes reinvested returns by construction
+
     proj.push({
       year, age, netWorth, investPortfolio, totalNonInv, totalAssets, totalDebt,
       annualIncome, annualExpenses, totalTax, netIncome, pensionTaxFree, pensionTaxable,
       isaIncome: isaAnnual, taxableIncome: taxResult.taxableIncome,
+      investmentIncome, liquidIncome,
       savings: retired ? -withdrawal : savings,
       withdrawal, debtPayment, investReturn, milestoneEffect,
       liquidBalance,
@@ -2390,26 +2523,27 @@ function getCFDataForAge(age) {
   const row = projection.find(r => r.age === age) || projection[projection.length - 1];
   if (!row) return null;
 
-  // y = years elapsed since projection start — identical to the loop variable in buildProjection
+  // y = years elapsed since projection start
   const y = age - p.age;
 
-  // ── Income sources ──────────────────────────────────────────────────────────
-  // Use the EXACT same formula as buildProjection so per-source values sum to
-  // row.annualIncome without any scaling correction.
-  //
-  //   income[i] at age = monthly * 12 * (1 + growthRate) ^ max(0, age - fromAge)
-  //
-  // This matches line 1247 of buildProjection exactly.
+  // ── LIQUID INCOME: only what actually lands in your bank account ─────────────
+  // Rule: include entries from the Income & Expenses tab (state.income[]) that are
+  // active at this age, PLUS rental income and income-mode investment returns.
+  // EXCLUDE: reinvested investment returns — they never touch your cashflow.
   const incomeSources = [];
   let totalISA = 0, totalPension = 0, totalOther = 0;
 
+  // 1. Income & Expenses tab entries — the sole authoritative source of liquid income
   state.income.forEach(inc => {
     const fa = inc.fromAge  || 0;
     const ua = inc.untilAge || 999;
     if (age >= fa && age < ua) {
-      const growthYears = Math.max(0, age - fa);
+      // Compound only from when the stream becomes active (matches projection engine)
+      const streamStartY = Math.max(0, fa - p.age);
+      const growthYears  = Math.max(0, y - streamStartY);
+      const growthRate  = inc.growthRate != null ? inc.growthRate : p.incomeGrowth;
       const amt = inc.monthly * 12
-                * Math.pow(1 + ((inc.growthRate || p.incomeGrowth) / 100), growthYears);
+                * Math.pow(1 + (growthRate / 100), growthYears);
       incomeSources.push({ name: inc.name, amount: amt, type: inc.type });
       if      (inc.type === 'ISA Drawdown')                                    totalISA     += amt;
       else if (inc.type === 'Pension Drawdown' || inc.type === 'Pension')       totalPension += amt;
@@ -2417,7 +2551,7 @@ function getCFDataForAge(age) {
     }
   });
 
-  // Rental income — inflated by y years from projection start (matches buildProjection line 1258)
+  // 2. Rental income from investment accounts — cash received, always liquid
   state.investments.accounts.forEach(a => {
     if (a.isRental && a.monthlyRentalIncome > 0) {
       const amt = a.monthlyRentalIncome * 12 * Math.pow(1 + p.inflation / 100, y);
@@ -2426,15 +2560,39 @@ function getCFDataForAge(age) {
     }
   });
 
-  // State pension — flat, matches buildProjection line 1266
+  // 3. Investment returns explicitly set to income mode — user chose to distribute these
+  //    Returns from accounts in incomeMode='reinvest' are NOT included here;
+  //    they stay inside the portfolio and never appear in cashflow.
+  state.investments.accounts.forEach(a => {
+    const fa = a.incomeFromAge != null ? a.incomeFromAge : null;
+    const ua = a.incomeToAge   != null ? a.incomeToAge   : null;
+    const inWindow = (fa === null || age >= fa) && (ua === null || age < ua);
+    if (a.incomeMode === 'income' && inWindow) {
+      const ret = a.balance * accountReturnRate(a);
+      if (ret > 0) {
+        const label = a.name + ' (Returns)';
+        if (a.type === 'ISA') {
+          incomeSources.push({ name: label, amount: ret, type: 'ISA Drawdown' });
+          totalISA += ret;
+        } else if (a.type === 'Pension' || a.type === 'SIPP' || a.type === '401k' || a.type === 'IRA') {
+          incomeSources.push({ name: label, amount: ret, type: 'Pension Drawdown' });
+          totalPension += ret;
+        } else {
+          incomeSources.push({ name: label, amount: ret, type: 'Dividend Income' });
+          totalOther += ret;
+        }
+      }
+    }
+  });
+
+  // 4. State pension — received as cash
   if (age >= p.statePensionAge) {
     const sp = p.statePension * 12;
     incomeSources.push({ name: 'State Pension', amount: sp, type: 'State Benefits' });
     totalOther += sp;
   }
 
-  // ── Expenses ────────────────────────────────────────────────────────────────
-  // Same formula as buildProjection: inflated by y years from projection start.
+  // ── LIQUID EXPENSES: from Income & Expenses tab only ─────────────────────────
   const expenseSources = [];
   state.expenses.forEach(exp => {
     const fa = exp.fromAge  || 0;
@@ -2445,27 +2603,33 @@ function getCFDataForAge(age) {
     }
   });
 
-  // ── Tax — use the projection row directly ───────────────────────────────────
-  // row.totalTax, row.annualIncome, row.annualExpenses are already correct.
-  // We only need the ISA/pension split for the Sankey tax column.
+  // ── TOTALS ────────────────────────────────────────────────────────────────────
+  // Use our reconstructed liquid totals — NOT row.annualIncome, which may include
+  // projection-engine overrides. The tax calculation uses the breakdown for correct
+  // ISA/pension treatment.
+  const liquidIncome   = totalISA + totalPension + totalOther;
+  const liquidExpenses = expenseSources.reduce((s, e) => s + e.amount, 0);
+
   const pensionTF  = totalPension * 0.25;
   const pensionTx  = totalPension * 0.75;
   const bd         = { isa: totalISA, pensionTaxFree: pensionTF, pensionTaxable: pensionTx, other: totalOther };
-  const taxResult  = calcTax(row.annualIncome, p.taxRegime, bd);
+  const taxResult  = calcTax(liquidIncome, p.taxRegime, bd);
+  const liquidTax  = taxResult.income + taxResult.ni;
+  const netSurplus = liquidIncome - liquidTax - liquidExpenses;
+  const isDeficit  = netSurplus < 0;
 
-  // Use row totals as the authoritative figures for KPIs and Sankey scale
-  const totalIncome   = row.annualIncome;
-  const totalExpenses = row.annualExpenses;
-  const totalTax      = row.totalTax;
-  const netSurplus    = totalIncome - totalTax - totalExpenses;
-  const isDeficit     = netSurplus < 0;
+  // Debt payments from projection row (they are real cash outflows)
+  const debtPmt = row.debtPayment || 0;
 
   return {
     age, year: row.year, row,
     incomeSources, expenseSources,
     totalISA, totalPension, totalPensionTF: pensionTF, totalPensionTx: pensionTx, totalOther,
-    totalIncome, incomeTax: taxResult.income, ni: taxResult.ni, totalTax, totalExpenses,
-    netSurplus, isDeficit, debtPmt: row.debtPayment || 0,
+    totalIncome:   liquidIncome,
+    totalExpenses: liquidExpenses,
+    incomeTax: taxResult.income, ni: taxResult.ni,
+    totalTax:  liquidTax,
+    netSurplus, isDeficit, debtPmt,
     retired: row.retired, fireReached: row.fireReached,
     investPortfolio: row.investPortfolio, netWorth: row.netWorth,
     liquidBalance: row.liquidBalance || 0
@@ -2473,19 +2637,24 @@ function getCFDataForAge(age) {
 }
 
 function updateCashFlowKPIs() {
-  // Read from the projection row at current age — not raw state.income —
-  // so the initial KPI cards reflect growth-adjusted income correctly.
-  const p   = state.profile;
-  const row = projection.find(r => r.age === p.age) || projection[0];
-  if (!row) return;
-  const taxSub = document.getElementById('cf-tax-sub');
-  const eff    = row.annualIncome > 0 ? (row.totalTax / row.annualIncome * 100).toFixed(1) : '0.0';
-  document.getElementById('cf-income').textContent    = cur(row.annualIncome);
-  document.getElementById('cf-expenses').textContent  = cur(row.annualExpenses);
-  document.getElementById('cf-tax').textContent       = cur(row.totalTax);
-  document.getElementById('cf-surplus').textContent   = cur(row.annualIncome - row.totalTax - row.annualExpenses);
+  // Cashflow KPIs show liquid income only — entries from the Income & Expenses tab
+  // plus income-mode investment returns. Reinvested portfolio growth is excluded.
+  const p = state.profile;
+  if (!projection.length) return;
+
+  // Use getCFDataForAge at current age — it already applies the liquid-only rule
+  const data = getCFDataForAge(p.age);
+  if (!data) return;
+
+  const eff = data.totalIncome > 0 ? (data.totalTax / data.totalIncome * 100).toFixed(1) : '0.0';
+  document.getElementById('cf-income').textContent    = cur(data.totalIncome);
+  document.getElementById('cf-expenses').textContent  = cur(data.totalExpenses);
+  document.getElementById('cf-tax').textContent       = cur(data.totalTax);
+  document.getElementById('cf-surplus').textContent   = cur(data.netSurplus);
+
   const incomeSub = document.getElementById('cf-income-sub');
   if (incomeSub) incomeSub.textContent = `at age ${p.age} (current)`;
+  const taxSub = document.getElementById('cf-tax-sub');
   if (taxSub)    taxSub.textContent    = `effective ${eff}% rate`;
 }
 
@@ -2922,16 +3091,55 @@ function onCFSlider(idx) {
 function drawCFLifetimeChart() {
   const c = getThemeColors();
   destroyChart('chart-cashflow-lifetime');
+
+  // Per-row liquid income breakdown:
+  // - Employment/Other income  = liquidIncome minus ISA drawdown, pension drawdown, state pension
+  // - ISA drawdown             = isaIncome (tax-free drawdown streams only)
+  // - Pension drawdown         = pensionTaxFree + pensionTaxable (drawn pension income)
+  // All are already in liquidIncome — we show them as visual sub-bands, NOT stacked additively.
+  // outflows: expenses, tax, debt payments
+
   charts['chart-cashflow-lifetime'] = new Chart(document.getElementById('chart-cashflow-lifetime'), {
     type: 'bar',
     data: {
       labels: projection.map(r => r.age),
       datasets: [
-        { label: 'Income', data: projection.map(r => r.annualIncome), backgroundColor: `${c.accent}75`, stack: 'in' },
-        { label: 'ISA (tax-free)', data: projection.map(r => r.isaIncome||0), backgroundColor: `${c.teal}60`, stack: 'in' },
-        { label: 'Expenses', data: projection.map(r => -r.annualExpenses), backgroundColor: `${c.red}70`, stack: 'out' },
-        { label: 'Tax', data: projection.map(r => -r.totalTax), backgroundColor: `${c.amber}70`, stack: 'out' },
-        { label: 'Debt Payments', data: projection.map(r => -(r.debtPayment||0)), backgroundColor: `${c.red}44`, stack: 'out' }
+        {
+          label: 'Employment / Other Income',
+          data: projection.map(r => Math.max(0, (r.liquidIncome||r.annualIncome) - (r.isaIncome||0) - (r.pensionTaxFree||0) - (r.pensionTaxable||0))),
+          backgroundColor: `${c.accent}80`,
+          stack: 'in'
+        },
+        {
+          label: 'ISA Drawdown (tax-free)',
+          data: projection.map(r => r.isaIncome || 0),
+          backgroundColor: `${c.teal}80`,
+          stack: 'in'
+        },
+        {
+          label: 'Pension Drawdown',
+          data: projection.map(r => (r.pensionTaxFree||0) + (r.pensionTaxable||0)),
+          backgroundColor: `${c.purple}80`,
+          stack: 'in'
+        },
+        {
+          label: 'Expenses',
+          data: projection.map(r => -r.annualExpenses),
+          backgroundColor: `${c.red}70`,
+          stack: 'out'
+        },
+        {
+          label: 'Tax',
+          data: projection.map(r => -r.totalTax),
+          backgroundColor: `${c.amber}70`,
+          stack: 'out'
+        },
+        {
+          label: 'Debt Payments',
+          data: projection.map(r => -(r.debtPayment||0)),
+          backgroundColor: `${c.red}40`,
+          stack: 'out'
+        }
       ]
     },
     options: {
@@ -2951,9 +3159,11 @@ function drawCFLifetimeChart() {
             afterBody: ctx => {
               const row = projection[ctx[0]?.dataIndex];
               if (!row) return [];
-              const lines = [`Net: ${cur(row.annualIncome - row.totalTax - row.annualExpenses)}`];
+              const liq = row.liquidIncome || row.annualIncome;
+              const net = liq - row.totalTax - row.annualExpenses - (row.debtPayment||0);
+              const lines = [`Liquid Income: ${cur(liq)}`, `Net Cashflow: ${cur(net)}`];
               if (row.retired) lines.push('Phase: Drawdown');
-              if (row.liquidBalance <= 0 && row.retired) lines.push('⚠ Liquid assets exhausted!');
+              if (row.liquidBalance <= 0 && row.retired) lines.push('⚠ Liquid assets exhausted');
               return lines;
             }
           }
@@ -3116,6 +3326,7 @@ function updateTables() {
       <td class="mono pos">${cur(r.netWorth)}</td>
       <td class="mono">${cur(r.investPortfolio)}</td>
       <td class="mono">${cur(r.annualIncome)}</td>
+      <td class="mono" style="color:var(--amber)">${r.investmentIncome>0?cur(r.investmentIncome):'—'}</td>
       <td class="mono" style="color:var(--teal)">${r.isaIncome>0?cur(r.isaIncome):'—'}</td>
       <td class="mono" style="color:var(--accent)">${r.pensionTaxFree>0?cur(r.pensionTaxFree):'—'}</td>
       <td class="mono neg">-${cur(r.annualExpenses)}</td>
@@ -3165,6 +3376,12 @@ function toggleRentalFields() {
   if (lg) lg.style.display = isRental ? 'flex' : 'none';
 }
 
+function toggleIncomeModeFields() {
+  const mode = document.getElementById('mf-income-mode')?.value;
+  const fields = document.getElementById('income-mode-age-fields');
+  if (fields) fields.style.display = mode === 'income' ? 'block' : 'none';
+}
+
 function renderAccountsTable(){
   const debtPayoffInfo = getDebtPayoffInfo();
   document.getElementById('accounts-tbody').innerHTML=state.investments.accounts.map(a=>{
@@ -3176,12 +3393,24 @@ function renderAccountsTable(){
     const linkedDebt = a.linkedDebtId ? debtPayoffInfo.find(d=>d.id===a.linkedDebtId) : null;
     const payoffStr = linkedDebt?.payoffYear
       ? `<br><span style="font-size:10px;color:var(--accent);font-family:var(--font-m)">Mortgage paid off ${linkedDebt.payoffYear} (age ${linkedDebt.payoffAge})</span>` : '';
+    // incomeMode badge
+    const isIncome = a.incomeMode === 'income';
+    const modeStr  = isIncome
+      ? `<span class="badge amber">💷 Pay as Income</span>`
+      : `<span class="badge blue">🔄 Reinvest</span>`;
+    const ageWindowStr = isIncome
+      ? `<br><span style="font-size:10px;color:var(--amber);font-family:var(--font-m)">${
+          a.incomeFromAge != null || a.incomeToAge != null
+            ? 'Ages ' + (a.incomeFromAge ?? '–') + ' → ' + (a.incomeToAge ?? '∞')
+            : 'All ages'
+        }</span>` : '';
     return `<tr>
       <td><strong>${a.name}</strong>${rentalStr}${payoffStr}</td>
       <td class="mono pos">£${a.balance.toLocaleString()}</td>
       <td class="mono">£${a.monthlyContrib.toLocaleString()}/mo</td>
       <td><span class="badge green">${a.type}</span></td>
       <td>${retStr}</td>
+      <td>${modeStr}${ageWindowStr}</td>
       <td>${actionBtns(`openModal('account',${a.id})`,`removeItem('account',${a.id})`)}</td>
     </tr>`;
   }).join('');
@@ -3309,6 +3538,36 @@ const MODAL_DEFS = {
           ${state.debts.map(d=>`<option value="${d.id}">${d.name} (£${d.balance.toLocaleString()} @ ${d.interestRate}%)</option>`).join('')}
         </select>
         <div class="form-hint">Auto-shows payoff date; debt payments stop automatically when balance reaches £0</div>
+      </div>
+      <!-- Return mode -->
+      <div style="background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:14px;margin-top:4px">
+        <div style="font-size:10px;color:var(--accent);font-family:var(--font-m);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;font-weight:600">📈 Investment Return Mode</div>
+        <div class="form-group" style="margin-bottom:10px">
+          <label class="form-label">Return Handling</label>
+          <select class="form-select" id="mf-income-mode" onchange="toggleIncomeModeFields()">
+            <option value="reinvest">🔄 Reinvest (compound, stay in account)</option>
+            <option value="income">💷 Pay as Income (distribute returns to cashflow)</option>
+          </select>
+          <div class="form-hint">Default: Reinvest. Pensions and illiquid accounts should stay on Reinvest until drawdown age.</div>
+        </div>
+        <div id="income-mode-age-fields" style="display:none">
+          <div class="form-row" style="margin-bottom:0">
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label">Income From Age <span style="color:var(--text3)">(blank = immediately)</span></label>
+              <input type="number" class="form-input" id="mf-income-from-age" placeholder="e.g. 57" min="0">
+              <div class="form-hint">Age at which returns start flowing as income</div>
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label">Income Until Age <span style="color:var(--text3)">(blank = forever)</span></label>
+              <input type="number" class="form-input" id="mf-income-to-age" placeholder="e.g. 75" min="0">
+              <div class="form-hint">After this age, returns revert to reinvesting</div>
+            </div>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-top:10px;line-height:1.6">
+          <strong>Reinvest:</strong> Returns compound inside the account (standard for pensions, ISAs in accumulation).<br>
+          <strong>Pay as Income:</strong> Returns added to annual income — ISA returns are tax-free, pension returns use 25% PCLS split, GIA/other are taxable.
+        </div>
       </div>`,
     load: item => {
       document.getElementById('mf-name').value           = item.name;
@@ -3319,7 +3578,15 @@ const MODAL_DEFS = {
       document.getElementById('mf-rental-income').value  = item.monthlyRentalIncome || 0;
       const ldEl = document.getElementById('mf-linked-debt');
       if (ldEl && item.linkedDebtId) ldEl.value = item.linkedDebtId;
+      // incomeMode
+      const modeEl = document.getElementById('mf-income-mode');
+      if (modeEl) modeEl.value = item.incomeMode || 'reinvest';
+      const faEl = document.getElementById('mf-income-from-age');
+      if (faEl) faEl.value = item.incomeFromAge != null ? item.incomeFromAge : '';
+      const taEl = document.getElementById('mf-income-to-age');
+      if (taEl) taEl.value = item.incomeToAge != null ? item.incomeToAge : '';
       toggleRentalFields();
+      toggleIncomeModeFields();
     },
     save: id => ({
       id:                  id || Date.now(),
@@ -3330,7 +3597,10 @@ const MODAL_DEFS = {
       customReturnRate:    document.getElementById('mf-custom-return').value !== '' ? parseFloat(document.getElementById('mf-custom-return').value) : null,
       isRental:            document.getElementById('mf-type').value === 'Rental Property',
       monthlyRentalIncome: parseFloat(document.getElementById('mf-rental-income')?.value) || 0,
-      linkedDebtId:        document.getElementById('mf-linked-debt')?.value ? parseInt(document.getElementById('mf-linked-debt').value) : null
+      linkedDebtId:        document.getElementById('mf-linked-debt')?.value ? parseInt(document.getElementById('mf-linked-debt').value) : null,
+      incomeMode:          document.getElementById('mf-income-mode')?.value || 'reinvest',
+      incomeFromAge:       document.getElementById('mf-income-from-age')?.value !== '' ? parseInt(document.getElementById('mf-income-from-age').value) : null,
+      incomeToAge:         document.getElementById('mf-income-to-age')?.value   !== '' ? parseInt(document.getElementById('mf-income-to-age').value)   : null
     }),
     validate: () => !document.getElementById('mf-name').value.trim() ? 'Name is required.' : null,
     collection: () => state.investments.accounts,
@@ -3574,6 +3844,19 @@ function updateTax(){
   state.investments.accounts.forEach(a => {
     if (a.isRental && a.monthlyRentalIncome > 0) otherAnnual += a.monthlyRentalIncome * 12;
   });
+  // Add income-mode investment returns at current age
+  let invReturnISA = 0, invReturnPension = 0, invReturnOther = 0;
+  state.investments.accounts.forEach(a => {
+    const fa = a.incomeFromAge != null ? a.incomeFromAge : null;
+    const ua = a.incomeToAge   != null ? a.incomeToAge   : null;
+    const inW = (fa === null || p.age >= fa) && (ua === null || p.age < ua);
+    if (a.incomeMode === 'income' && inW) {
+      const ret = a.balance * accountReturnRate(a);
+      if (a.type === 'ISA')                                                         { isaAnnual     += ret; invReturnISA     += ret; }
+      else if (a.type==='Pension'||a.type==='SIPP'||a.type==='401k'||a.type==='IRA'){ pensionAnnual  += ret; invReturnPension += ret; }
+      else                                                                           { otherAnnual    += ret; invReturnOther   += ret; }
+    }
+  });
 
   const pensionTaxFree = pensionAnnual * 0.25;
   const pensionTaxable = pensionAnnual * 0.75;
@@ -3614,7 +3897,15 @@ function updateTax(){
           <div style="font-family:var(--font-d);font-size:18px;color:var(--blue);margin-top:3px">${cur(otherAnnual)}</div>
           <div style="font-size:10px;color:var(--text3);margin-top:2px;font-family:var(--font-m)">Employment, rental etc.</div>
         </div>
-      </div>`;
+      </div>
+      ${(invReturnISA + invReturnPension + invReturnOther) > 0 ? `
+      <div style="margin-top:10px;padding:10px 12px;background:var(--amber-dim);border:1px solid rgba(251,191,36,.25);border-radius:8px;font-size:12px;color:var(--text2)">
+        <strong style="color:var(--amber)">💷 Investment Returns in Income Mode</strong> — 
+        ${invReturnISA > 0 ? `ISA returns: <strong style="color:var(--teal)">${cur(invReturnISA)} (tax-free)</strong>. ` : ''}
+        ${invReturnPension > 0 ? `Pension returns: <strong style="color:var(--accent)">${cur(invReturnPension)} (25% PCLS split applied)</strong>. ` : ''}
+        ${invReturnOther > 0 ? `GIA/Other returns: <strong style="color:var(--amber)">${cur(invReturnOther)} (taxable)</strong>. ` : ''}
+        These are flowing to cashflow instead of being reinvested.
+      </div>` : ''}`;
   }
 
   renderTaxBandsTable(taxResult.taxableIncome || 0);
@@ -4195,13 +4486,14 @@ function exportJSON(){
 
 function exportCSV(){
   const hdr = ['Year','Age','Net Worth','Investments','Non-Inv','Total Assets','Debt',
-    'Income','ISA Income','Pension Tax-Free','Pension Taxable','Expenses','Tax','Surplus',
+    'Income','Investment Income','ISA Income','Pension Tax-Free','Pension Taxable','Expenses','Tax','Surplus',
     'Inv Return','Milestone Effect','Liquid Balance','Debt Payment'];
   const rows = projection.map(r => [
     r.year, r.age, Math.round(r.netWorth), Math.round(r.investPortfolio),
     Math.round(r.totalNonInv), Math.round(r.totalAssets), Math.round(r.totalDebt),
-    Math.round(r.annualIncome), Math.round(r.isaIncome||0), Math.round(r.pensionTaxFree||0),
-    Math.round(r.pensionTaxable||0), Math.round(r.annualExpenses), Math.round(r.totalTax),
+    Math.round(r.annualIncome), Math.round(r.investmentIncome||0), Math.round(r.isaIncome||0),
+    Math.round(r.pensionTaxFree||0), Math.round(r.pensionTaxable||0),
+    Math.round(r.annualExpenses), Math.round(r.totalTax),
     Math.round(r.savings), Math.round(r.investReturn), Math.round(r.milestoneEffect||0),
     Math.round(r.liquidBalance||0), Math.round(r.debtPayment||0)
   ].join(','));
