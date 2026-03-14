@@ -206,6 +206,21 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15)}
 [data-autosave="on"] #autosave-toggle-lbl{color:var(--accent)}
 [data-autosave="on"] #autosave-toggle{border-color:var(--accent2)}
 .recovery-banner{background:linear-gradient(135deg,rgba(74,222,128,.12),rgba(96,165,250,.08));border:1px solid var(--border2);border-radius:var(--radius);padding:16px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+/* Planning tools */
+.tool-result-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tool-stat{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px}
+.tool-stat-label{font-size:9.5px;color:var(--text3);font-family:var(--font-m);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px}
+.tool-stat-value{font-family:var(--font-d);font-size:20px;font-weight:700;color:var(--text);line-height:1.1}
+.tool-stat-sub{font-size:10px;color:var(--text3);font-family:var(--font-m);margin-top:3px}
+.tool-stat.good .tool-stat-value{color:var(--accent)}
+.tool-stat.warn .tool-stat-value{color:var(--amber)}
+.tool-stat.bad  .tool-stat-value{color:var(--red)}
+.tool-stat.blue .tool-stat-value{color:var(--blue)}
+.tool-stat.purple .tool-stat-value{color:var(--purple)}
+.ss-opt-row{background:rgba(74,222,128,.08) !important}
+.ss-opt-row td{color:var(--accent) !important}
+.sorr-survived{color:var(--accent);font-weight:700}
+.sorr-depleted{color:var(--red);font-weight:700}
 .recovery-banner .rb-icon{font-size:28px;flex-shrink:0}
 .recovery-banner .rb-body{flex:1;min-width:200px}
 .recovery-banner .rb-title{font-weight:700;font-size:14px;color:var(--text);margin-bottom:3px}
@@ -261,6 +276,8 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15)}
     <div class="nav-item" onclick="showView('scenarios')"><span class="nav-icon">⚡</span>Scenarios</div>
     <div class="nav-item" onclick="showView('cashflow')"><span class="nav-icon">⟲</span>Cash Flow</div>
     <div class="nav-item" onclick="showView('tax')"><span class="nav-icon">🏷</span>Tax Analysis</div>
+    <div class="nav-section-label">Tools</div>
+    <div class="nav-item" onclick="showView('tools')"><span class="nav-icon">🔧</span>Planning Tools</div>
     <div class="nav-section-label">Milestones</div>
     <div class="nav-item" onclick="showView('milestones')"><span class="nav-icon">🎯</span>Life Events</div>
     <div class="nav-item" onclick="showView('estate')"><span class="nav-icon">🏛</span>Estate &amp; Legacy</div>
@@ -633,11 +650,325 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15)}
     </div>
   </div>
 
+  <!-- PLANNING TOOLS -->
+  <div class="view" id="view-tools">
+
+    <!-- Tab switcher within the view -->
+    <div class="tab-list" style="margin-bottom:20px">
+      <button class="tab-btn active" id="tool-tab-retire"   onclick="switchTool('retire')">🎯 Retirement Age</button>
+      <button class="tab-btn"        id="tool-tab-barista"  onclick="switchTool('barista')">☕ Barista FIRE</button>
+      <button class="tab-btn"        id="tool-tab-salsac"   onclick="switchTool('salsac')">💰 Salary Sacrifice</button>
+      <button class="tab-btn"        id="tool-tab-sorr"     onclick="switchTool('sorr')">📉 Sequence Risk</button>
+    </div>
+
+    <!-- ── TOOL 1: Retirement Age Reverse Calculator ─────── -->
+    <div id="tool-retire">
+      <div class="alert info">💡 Enter your desired retirement income and find the earliest age your portfolio can sustain it — working backwards from your finances.</div>
+      <div class="grid-2">
+        <div class="panel">
+          <div class="panel-header"><span>🎯</span><span class="panel-title">Target Income at Retirement</span></div>
+          <div class="panel-body">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Desired Annual Net Income (£)</label>
+                <input type="number" class="form-input" id="rc-income" value="40000" step="1000" min="0">
+                <div class="form-hint">After-tax income you want in retirement (today's money)</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Include State Pension?</label>
+                <select class="form-select" id="rc-state-pension">
+                  <option value="yes">Yes — reduce drawdown by state pension</option>
+                  <option value="no">No — plan without state pension</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">SWR Override % <span style="color:var(--text3)">(blank = use profile)</span></label>
+                <input type="number" class="form-input" id="rc-swr" placeholder="e.g. 3.5" step="0.1" min="1" max="10">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Inflation-adjust income?</label>
+                <select class="form-select" id="rc-inflate">
+                  <option value="yes">Yes — inflate to future money</option>
+                  <option value="no">No — use today's money as-is</option>
+                </select>
+              </div>
+            </div>
+            <button class="btn primary" style="width:100%;margin-top:4px" onclick="runRetireCalc()">🔍 Calculate Retirement Age</button>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><span>📊</span><span class="panel-title">Results</span></div>
+          <div class="panel-body" id="rc-results">
+            <div style="text-align:center;padding:30px;color:var(--text3);font-family:var(--font-m);font-size:13px">Enter your target income and click Calculate</div>
+          </div>
+        </div>
+      </div>
+      <div class="panel" id="rc-chart-panel" style="display:none">
+        <div class="panel-header"><span>📈</span><span class="panel-title">Portfolio vs Required Drawdown Target — Over Time</span></div>
+        <div class="panel-body"><div class="chart-container" style="height:260px"><canvas id="chart-rc-timeline"></canvas></div></div>
+      </div>
+    </div>
+
+    <!-- ── TOOL 2: Barista FIRE Bridge ──────────────────── -->
+    <div id="tool-barista" style="display:none">
+      <div class="alert info">☕ Model a part-time income bridge: work fewer hours (or take lower-stress work) between now and full FIRE. See how much it moves your FIRE date.</div>
+      <div class="grid-2">
+        <div class="panel">
+          <div class="panel-header"><span>⚙</span><span class="panel-title">Bridge Income Settings</span></div>
+          <div class="panel-body">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Part-Time Monthly Income (£)</label>
+                <input type="number" class="form-input" id="bf-income" value="1500" step="100" min="0">
+                <div class="form-hint">Your reduced income during the bridge</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Reduced Monthly Expenses (£)</label>
+                <input type="number" class="form-input" id="bf-expenses" value="0" step="100" min="0">
+                <div class="form-hint">0 = keep current expenses unchanged</div>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Bridge Starts at Age</label>
+                <input type="number" class="form-input" id="bf-start-age" value="" placeholder="Current age">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Bridge Ends at Age</label>
+                <input type="number" class="form-input" id="bf-end-age" value="" placeholder="FIRE age">
+                <div class="form-hint">Leave blank to find optimal end point</div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Stop All Work Income During Bridge?</label>
+              <select class="form-select" id="bf-replace">
+                <option value="add">Add bridge income on top of existing income</option>
+                <option value="replace">Replace all employment income with bridge income</option>
+              </select>
+            </div>
+            <button class="btn primary" style="width:100%;margin-top:4px" onclick="runBaristaCalc()">☕ Run Barista FIRE Analysis</button>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><span>📊</span><span class="panel-title">Barista vs Base Case</span></div>
+          <div class="panel-body" id="bf-results">
+            <div style="text-align:center;padding:30px;color:var(--text3);font-family:var(--font-m);font-size:13px">Configure bridge income and click Run</div>
+          </div>
+        </div>
+      </div>
+      <div class="panel" id="bf-chart-panel" style="display:none">
+        <div class="panel-header"><span>📈</span><span class="panel-title">Net Worth Trajectory Comparison</span></div>
+        <div class="panel-body"><div class="chart-container" style="height:260px"><canvas id="chart-bf-compare"></canvas></div></div>
+      </div>
+    </div>
+
+    <!-- ── TOOL 3: Salary Sacrifice / Pension Optimiser ─── -->
+    <div id="tool-salsac" style="display:none">
+      <div class="alert info">💰 Salary sacrifice into a pension reduces your gross salary, cutting Income Tax <em>and</em> National Insurance before tax. Find the contribution level that maximises your take-home while building retirement wealth.</div>
+      <div class="grid-2">
+        <div class="panel">
+          <div class="panel-header"><span>⚙</span><span class="panel-title">Salary Sacrifice Settings</span></div>
+          <div class="panel-body">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Gross Annual Salary (£)</label>
+                <input type="number" class="form-input" id="ss-salary" value="60000" step="1000">
+                <div class="form-hint">Pre-sacrifice gross salary</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Employer Contribution %</label>
+                <input type="number" class="form-input" id="ss-employer" value="5" step="0.5" min="0" max="20">
+                <div class="form-hint">Employer match (added to your sacrifice)</div>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Sweep From %</label>
+                <input type="number" class="form-input" id="ss-from" value="0" step="1" min="0" max="50">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Sweep To %</label>
+                <input type="number" class="form-input" id="ss-to" value="30" step="1" min="1" max="60">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Tax Year</label>
+              <select class="form-select" id="ss-regime">
+                <option value="uk">🇬🇧 UK 2024/25</option>
+                <option value="us">🇺🇸 US</option>
+              </select>
+            </div>
+            <button class="btn primary" style="width:100%;margin-top:4px" onclick="runSalSacCalc()">💰 Run Optimiser</button>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><span>📊</span><span class="panel-title">Optimal Contribution Point</span></div>
+          <div class="panel-body" id="ss-results">
+            <div style="text-align:center;padding:30px;color:var(--text3);font-family:var(--font-m);font-size:13px">Enter your salary and click Run Optimiser</div>
+          </div>
+        </div>
+      </div>
+      <div class="panel" id="ss-chart-panel" style="display:none">
+        <div class="panel-header"><span>📈</span><span class="panel-title">Take-Home vs Total Pension Contribution — by Sacrifice %</span></div>
+        <div class="panel-body"><div class="chart-container" style="height:280px"><canvas id="chart-ss-sweep"></canvas></div></div>
+      </div>
+      <div class="panel" id="ss-table-panel" style="display:none">
+        <div class="panel-header"><span>📋</span><span class="panel-title">Full Contribution Sweep Table</span></div>
+        <div class="panel-body" style="padding:0;overflow-x:auto">
+          <table class="data-table">
+            <thead><tr><th>Sacrifice %</th><th>Your Contribution</th><th>Employer</th><th>Total Pension</th><th>Tax Saving</th><th>NI Saving</th><th>Net Take-Home</th><th>Efficiency</th></tr></thead>
+            <tbody id="ss-table-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── TOOL 4: Sequence-of-Returns Risk ─────────────── -->
+    <div id="tool-sorr" style="display:none">
+      <div class="alert warning">⚠ Sequence-of-returns risk is the single biggest threat to early retirees. A bad market in year 1–3 of retirement permanently impairs your portfolio even if long-run returns recover. This tool shows how your specific plan survives each historical crash.</div>
+      <div class="grid-2">
+        <div class="panel">
+          <div class="panel-header"><span>⚙</span><span class="panel-title">Simulation Settings</span></div>
+          <div class="panel-body">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Retirement Portfolio (£)</label>
+                <input type="number" class="form-input" id="sorr-portfolio" value="" placeholder="Uses projected value at retire age">
+                <div class="form-hint">Blank = use your projected portfolio at retirement</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Annual Withdrawal (£)</label>
+                <input type="number" class="form-input" id="sorr-withdrawal" value="" placeholder="Uses SWR × expenses">
+                <div class="form-hint">Blank = expenses × SWR from your profile</div>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Simulation Length (years)</label>
+                <input type="number" class="form-input" id="sorr-years" value="30" min="10" max="60">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Recovery Return % p.a.</label>
+                <input type="number" class="form-input" id="sorr-recovery" value="" placeholder="Uses blended return">
+                <div class="form-hint">Return after the crash sequence ends</div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Inject crash in year</label>
+              <select class="form-select" id="sorr-inject-year">
+                <option value="1">Year 1 of retirement (worst case)</option>
+                <option value="2">Year 2</option>
+                <option value="3">Year 3</option>
+                <option value="5">Year 5</option>
+              </select>
+            </div>
+            <button class="btn primary" style="width:100%;margin-top:4px" onclick="runSOrrCalc()">📉 Run Sequence Risk Analysis</button>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><span>📊</span><span class="panel-title">Scenario Outcomes</span></div>
+          <div class="panel-body" id="sorr-results">
+            <div style="text-align:center;padding:30px;color:var(--text3);font-family:var(--font-m);font-size:13px">Click Run to see how each historical crash affects your retirement</div>
+          </div>
+        </div>
+      </div>
+      <div class="panel" id="sorr-chart-panel" style="display:none">
+        <div class="panel-header"><span>📈</span><span class="panel-title">Portfolio Survival — All Historical Crash Scenarios</span></div>
+        <div class="panel-body"><div class="chart-container" style="height:300px"><canvas id="chart-sorr"></canvas></div></div>
+      </div>
+      <div class="panel" id="sorr-table-panel" style="display:none">
+        <div class="panel-header"><span>📋</span><span class="panel-title">Detailed Scenario Results</span></div>
+        <div class="panel-body" style="padding:0;overflow-x:auto">
+          <table class="data-table">
+            <thead><tr><th>Crash Scenario</th><th>Crash Returns</th><th>Portfolio After Crash</th><th>Portfolio at Year 30</th><th>Survival</th><th>Lowest Point</th><th>Recovery Age</th></tr></thead>
+            <tbody id="sorr-table-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /view-tools -->
+
   <!-- MILESTONES -->
   <div class="view" id="view-milestones">
-    <div style="display:flex;justify-content:flex-end;margin-bottom:14px"><button class="btn primary" onclick="openModal('milestone')">+ Add Milestone / Transaction</button></div>
-    <div class="panel"><div class="panel-header"><span>🎯</span><span class="panel-title">Life Events &amp; Transactions</span></div><div class="panel-body" style="padding:0"><table class="data-table"><thead><tr><th>Name</th><th>Type</th><th>Trigger</th><th>Value</th><th>Impact</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead><tbody id="milestones-tbody"></tbody></table></div></div>
-    <div class="panel"><div class="panel-header"><span>📅</span><span class="panel-title">Visual Timeline</span></div><div class="panel-body"><div id="timeline-view" style="padding:6px 0"></div></div></div>
+    <div style="display:flex;justify-content:flex-end;margin-bottom:14px">
+      <button class="btn primary" onclick="openModal('milestone')">+ Add Milestone / Transaction</button>
+    </div>
+
+    <!-- ── Net Worth + Milestone Chart ── -->
+    <div class="panel">
+      <div class="panel-header">
+        <span>📈</span>
+        <span class="panel-title">Net Worth Over Time with Life Events</span>
+        <span style="margin-left:auto;font-size:11px;color:var(--text3);font-family:var(--font-m)" id="ms-timeline-label">Age — · —</span>
+      </div>
+      <div class="panel-body" style="padding-bottom:10px">
+        <!-- Chart sits inside a relative container so milestone SVG overlays it -->
+        <div style="position:relative">
+          <div class="chart-container" style="height:280px">
+            <canvas id="chart-ms-networth"></canvas>
+          </div>
+          <!-- SVG overlay for milestone lines — sized/positioned by JS -->
+          <svg id="ms-overlay-svg" style="position:absolute;top:0;left:0;pointer-events:none;overflow:visible"></svg>
+        </div>
+
+        <!-- Slider -->
+        <div style="padding:14px 4px 4px">
+          <input type="range" id="ms-age-slider" min="0" max="100" value="0"
+            style="width:100%" oninput="onMSSlider(this.value)">
+          <div style="position:relative;height:16px;margin-top:4px" id="ms-slider-labels"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Snapshot detail + milestone strip ── -->
+    <div class="grid-2">
+      <!-- Left: snapshot at selected age -->
+      <div class="panel">
+        <div class="panel-header">
+          <span>📊</span>
+          <span class="panel-title">Financial Snapshot</span>
+          <span id="ms-snapshot-age" style="font-size:11px;color:var(--text3);font-family:var(--font-m);margin-left:4px">(Age —)</span>
+        </div>
+        <div class="panel-body" style="padding:14px">
+          <div id="ms-snapshot-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px"></div>
+          <!-- Active milestones at this age -->
+          <div id="ms-snapshot-events" style="margin-top:2px"></div>
+        </div>
+      </div>
+
+      <!-- Right: milestone list for this age -->
+      <div class="panel">
+        <div class="panel-header"><span>📅</span><span class="panel-title">Upcoming Events</span></div>
+        <div class="panel-body" style="padding:0">
+          <table class="data-table" id="ms-upcoming-table">
+            <thead><tr><th>Event</th><th>Type</th><th>In</th><th>Amount</th></tr></thead>
+            <tbody id="ms-upcoming-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Horizontal dot timeline (clickable) ── -->
+    <div class="panel">
+      <div class="panel-header"><span>🗓</span><span class="panel-title">Visual Timeline — click any event to jump</span></div>
+      <div class="panel-body" style="padding:10px 16px 14px;overflow-x:auto">
+        <div id="timeline-view" style="padding:6px 0"></div>
+      </div>
+    </div>
+
+    <!-- ── Full event table ── -->
+    <div class="panel">
+      <div class="panel-header"><span>🎯</span><span class="panel-title">Life Events &amp; Transactions</span></div>
+      <div class="panel-body" style="padding:0">
+        <table class="data-table">
+          <thead><tr><th>Name</th><th>Type</th><th>Trigger</th><th>Value</th><th>Impact</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="milestones-tbody"></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
   <!-- ESTATE -->
@@ -3391,21 +3722,325 @@ function updateEstate(){
 }
 
 // =========================================================
-// MILESTONES
+// MILESTONES — net worth chart with overlaid events + slider
 // =========================================================
-function updateMilestones(){
-  const p=state.profile,yr=new Date().getFullYear();
-  const tColors={retirement:'var(--amber)',income:'var(--accent)',debt:'var(--red)',investment:'var(--blue)','asset-sale':'var(--teal)','asset-purchase':'var(--purple)',custom:'var(--text2)'};
-  const txBadge=m=>m.txAmount&&m.txAmount!==0?`<span class="badge ${m.txAmount>0?'teal':'red'}">${m.txAmount>0?'+':''}${cur(m.txAmount)}</span>`:'<span style="color:var(--text3);font-family:var(--font-m);font-size:11px">—</span>';
-  document.getElementById('milestones-tbody').innerHTML=state.milestones.map(m=>{
-    const reached=m.trigger==='age'?p.age>=m.value:yr>=m.value;
-    return `<tr><td><strong>${m.name}</strong></td><td><span class="badge" style="background:${tColors[m.type]||'var(--accent)'}22;color:${tColors[m.type]||'var(--accent)'};border:1px solid ${tColors[m.type]||'var(--accent)'}33">${m.type}</span></td><td class="mono">${m.trigger==='age'?'Age':'Year'}</td><td class="mono">${m.value}</td><td style="font-size:12px;color:var(--text3)">${m.impact||'—'}</td><td>${txBadge(m)}</td><td><span class="badge ${reached?'green':'blue'}">${reached?'Reached':'Future'}</span></td><td>${actionBtns(`openModal('milestone',${m.id})`,`removeItem('milestone',${m.id})`)}</td></tr>`;
+const MS_TYPE_COLORS = {
+  retirement:      '#fbbf24',
+  income:          '#4ade80',
+  debt:            '#f87171',
+  investment:      '#60a5fa',
+  'asset-sale':    '#2dd4bf',
+  'asset-purchase':'#c084fc',
+  custom:          '#94b89d'
+};
+
+function msTypeColor(type) {
+  return MS_TYPE_COLORS[type] || '#94b89d';
+}
+
+// Convert a milestone value (age or year) to an age
+function msToAge(m) {
+  if (m.trigger === 'age') return m.value;
+  const currentYear = new Date().getFullYear();
+  return state.profile.age + (m.value - currentYear);
+}
+
+function updateMilestones() {
+  const p   = state.profile;
+  const yr  = new Date().getFullYear();
+
+  // ── Table ──────────────────────────────────────────────
+  const txBadge = m => m.txAmount && m.txAmount !== 0
+    ? `<span class="badge ${m.txAmount > 0 ? 'teal' : 'red'}">${m.txAmount > 0 ? '+' : ''}${cur(m.txAmount)}</span>`
+    : '<span style="color:var(--text3);font-family:var(--font-m);font-size:11px">—</span>';
+
+  document.getElementById('milestones-tbody').innerHTML = state.milestones.map(m => {
+    const reached = m.trigger === 'age' ? p.age >= m.value : yr >= m.value;
+    const col = msTypeColor(m.type);
+    return `<tr>
+      <td><strong>${m.name}</strong></td>
+      <td><span class="badge" style="background:${col}22;color:${col};border:1px solid ${col}33">${m.type}</span></td>
+      <td class="mono">${m.trigger === 'age' ? 'Age' : 'Year'}</td>
+      <td class="mono">${m.value}</td>
+      <td style="font-size:12px;color:var(--text3)">${m.impact || '—'}</td>
+      <td>${txBadge(m)}</td>
+      <td><span class="badge ${reached ? 'green' : 'blue'}">${reached ? 'Reached' : 'Future'}</span></td>
+      <td>${actionBtns(`openModal('milestone',${m.id})`, `removeItem('milestone',${m.id})`)}</td>
+    </tr>`;
   }).join('');
 
-  const sorted=[...state.milestones].sort((a,b)=>a.value-b.value);
-  document.getElementById('timeline-view').innerHTML=`<div style="display:flex;align-items:center;padding:14px 6px;overflow-x:auto;min-height:95px;gap:0">
-    ${sorted.map((m,i)=>{const col=tColors[m.type]||'var(--purple)';return`<div style="display:flex;align-items:center"><div style="display:flex;flex-direction:column;align-items:center;min-width:120px"><div style="width:36px;height:36px;border-radius:50%;background:${col};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:var(--bg);box-shadow:0 3px 10px ${col}55">${i+1}</div><div style="font-size:11px;font-weight:700;color:${col};margin-top:7px;text-align:center">${m.name}</div><div style="font-size:10px;color:var(--text3);font-family:var(--font-m);margin-top:1px">${m.trigger==='age'?'Age ':' '}${m.value}</div>${m.txAmount?`<div style="font-size:10px;font-family:var(--font-m);color:${m.txAmount>0?'var(--teal)':'var(--red)'}">${m.txAmount>0?'+':''}${cur(m.txAmount)}</div>`:''}</div>${i<sorted.length-1?`<div style="width:40px;height:2px;background:var(--border);flex-shrink:0"></div>`:''}</div>`;}).join('')}
-  </div>`;
+  // ── Horizontal dot timeline ────────────────────────────
+  const sorted = [...state.milestones].sort((a, b) => msToAge(a) - msToAge(b));
+  document.getElementById('timeline-view').innerHTML = `
+    <div style="display:flex;align-items:center;padding:10px 6px;overflow-x:auto;min-height:90px;gap:0">
+      ${sorted.map((m, i) => {
+        const col  = msTypeColor(m.type);
+        const age  = msToAge(m);
+        const idx  = projection.findIndex(r => r.age === age);
+        const jump = idx >= 0 ? `onMSSlider(${idx});document.getElementById('ms-age-slider').value=${idx}` : '';
+        return `<div style="display:flex;align-items:center" onclick="${jump}" ${jump ? 'style="cursor:pointer"' : ''}>
+          <div style="display:flex;flex-direction:column;align-items:center;min-width:110px">
+            <div style="width:34px;height:34px;border-radius:50%;background:${col};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#000;box-shadow:0 3px 10px ${col}55;transition:transform .15s" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform=''">${i + 1}</div>
+            <div style="font-size:11px;font-weight:700;color:${col};margin-top:6px;text-align:center;max-width:100px;word-break:break-word">${m.name}</div>
+            <div style="font-size:10px;color:var(--text3);font-family:var(--font-m);margin-top:1px">${m.trigger === 'age' ? 'Age ' : ''}${m.value}</div>
+            ${m.txAmount ? `<div style="font-size:10px;font-family:var(--font-m);color:${m.txAmount > 0 ? 'var(--teal)' : 'var(--red)'}">${m.txAmount > 0 ? '+' : ''}${cur(m.txAmount)}</div>` : ''}
+          </div>
+          ${i < sorted.length - 1 ? `<div style="width:36px;height:2px;background:var(--border);flex-shrink:0"></div>` : ''}
+        </div>`;
+      }).join('')}
+    </div>`;
+
+  // ── Chart + slider ─────────────────────────────────────
+  buildMSChart();
+  buildMSSlider();
+}
+
+function buildMSChart() {
+  if (!projection.length) return;
+  const c    = getThemeColors();
+  const ages = projection.map(r => r.age);
+
+  destroyChart('chart-ms-networth');
+  charts['chart-ms-networth'] = new Chart(document.getElementById('chart-ms-networth'), {
+    type: 'line',
+    data: {
+      labels: ages,
+      datasets: [
+        {
+          label: 'Net Worth',
+          data:  projection.map(r => r.netWorth),
+          borderColor: c.accent,
+          backgroundColor: `${c.accent}15`,
+          fill: true,
+          tension: 0.4,
+          pointRadius: 0,
+          borderWidth: 2.5
+        },
+        {
+          label: 'Investment Portfolio',
+          data:  projection.map(r => r.investPortfolio),
+          borderColor: c.blue,
+          fill: false,
+          tension: 0.4,
+          pointRadius: 0,
+          borderWidth: 1.8
+        },
+        {
+          label: 'FIRE Target',
+          data:  projection.map(r => r.fireTarget),
+          borderColor: c.amber,
+          borderDash: [6, 4],
+          fill: false,
+          tension: 0,
+          pointRadius: 0,
+          borderWidth: 1.5
+        }
+      ]
+    },
+    options: {
+      ...cOpts(),
+      onClick: (e, els) => {
+        if (els.length) {
+          const sl = document.getElementById('ms-age-slider');
+          if (sl) { sl.value = els[0].index; onMSSlider(els[0].index); }
+        }
+      },
+      plugins: {
+        ...cOpts().plugins,
+        tooltip: {
+          ...cOpts().plugins.tooltip,
+          callbacks: {
+            afterBody: ctx => {
+              const row = projection[ctx[0]?.dataIndex];
+              if (!row) return [];
+              const evts = state.milestones.filter(m => msToAge(m) === row.age);
+              return evts.length ? ['Events: ' + evts.map(m => m.name).join(', ')] : [];
+            }
+          }
+        }
+      }
+    }
+  });
+
+  // Store reference for the overlay plugin
+  charts['chart-ms-networth']._msSliderIdx = 0;
+
+  // Custom plugin: vertical cursor line + milestone tick marks
+  const msOverlayPlugin = {
+    id: 'msOverlay',
+    afterDraw(chart) {
+      const ctx   = chart.ctx;
+      const xAxis = chart.scales.x;
+      const yAxis = chart.scales.y;
+      if (!xAxis || !yAxis) return;
+
+      const c2 = getThemeColors();
+
+      // Draw milestone vertical lines
+      state.milestones.forEach(m => {
+        const age = msToAge(m);
+        const idx = projection.findIndex(r => r.age === age);
+        if (idx < 0) return;
+        const meta = chart.getDatasetMeta(0);
+        if (!meta.data[idx]) return;
+        const x   = meta.data[idx].x;
+        const col = msTypeColor(m.type);
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(x, yAxis.top);
+        ctx.lineTo(x, yAxis.bottom);
+        ctx.strokeStyle = col + 'aa';
+        ctx.lineWidth   = 1.5;
+        ctx.setLineDash([3, 4]);
+        ctx.stroke();
+
+        // Diamond marker at top
+        ctx.setLineDash([]);
+        ctx.fillStyle = col;
+        ctx.beginPath();
+        ctx.moveTo(x,     yAxis.top - 2);
+        ctx.lineTo(x + 5, yAxis.top + 5);
+        ctx.lineTo(x,     yAxis.top + 12);
+        ctx.lineTo(x - 5, yAxis.top + 5);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      });
+
+      // Slider cursor line
+      const idx2 = chart._msSliderIdx;
+      if (idx2 === undefined) return;
+      const meta2 = chart.getDatasetMeta(0);
+      if (!meta2.data[idx2]) return;
+      const x2 = meta2.data[idx2].x;
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(x2, yAxis.top);
+      ctx.lineTo(x2, yAxis.bottom);
+      ctx.strokeStyle = c2.text;
+      ctx.lineWidth   = 2;
+      ctx.setLineDash([4, 3]);
+      ctx.stroke();
+      ctx.restore();
+    }
+  };
+  Chart.register(msOverlayPlugin);
+}
+
+function buildMSSlider() {
+  if (!projection.length) return;
+  const slider = document.getElementById('ms-age-slider');
+  if (!slider) return;
+  slider.min   = 0;
+  slider.max   = projection.length - 1;
+  slider.value = 0;
+
+  // Age labels
+  const labelsEl = document.getElementById('ms-slider-labels');
+  if (labelsEl) {
+    labelsEl.innerHTML = '';
+    labelsEl.style.position = 'relative';
+    const step = Math.ceil(projection.length / 8);
+    projection.forEach((row, i) => {
+      if (i % step === 0 || i === projection.length - 1) {
+        const span = document.createElement('span');
+        span.style.cssText = `position:absolute;left:${(i / (projection.length - 1) * 100).toFixed(1)}%;transform:translateX(-50%);font-size:10px;color:var(--text3);font-family:var(--font-m)`;
+        span.textContent = row.age;
+        labelsEl.appendChild(span);
+      }
+    });
+  }
+  onMSSlider(0);
+}
+
+function onMSSlider(idx) {
+  idx = parseInt(idx);
+  const row = projection[idx];
+  if (!row) return;
+
+  // Update chart cursor
+  const chart = charts['chart-ms-networth'];
+  if (chart) { chart._msSliderIdx = idx; chart.update('none'); }
+
+  // Header label
+  const lbl = document.getElementById('ms-timeline-label');
+  if (lbl) lbl.textContent = `Age ${row.age} · ${row.year}`;
+  const ageLbl = document.getElementById('ms-snapshot-age');
+  if (ageLbl) ageLbl.textContent = `(Age ${row.age})`;
+
+  // ── Snapshot grid ──────────────────────────────────────
+  const c = getThemeColors();
+  const firePct = row.fireTarget > 0 ? Math.min(200, (row.investPortfolio / row.fireTarget * 100)).toFixed(1) : '0';
+  const snap = [
+    { label: 'Net Worth',       value: cur(row.netWorth),        color: c.accent, sub: row.fireReached ? '✓ FIRE reached' : '' },
+    { label: 'Investments',     value: cur(row.investPortfolio),  color: c.blue,   sub: `${firePct}% of FIRE target` },
+    { label: 'Annual Income',   value: cur(row.annualIncome),     color: c.accent, sub: row.retired ? 'Drawdown phase' : 'Accumulation' },
+    { label: 'Annual Expenses', value: cur(row.annualExpenses),   color: c.red,    sub: '' },
+    { label: 'Annual Tax',      value: cur(row.totalTax),         color: c.amber,  sub: row.annualIncome > 0 ? (row.totalTax / row.annualIncome * 100).toFixed(1) + '% effective' : '' },
+    { label: 'Surplus / Deficit',
+      value: (row.savings >= 0 ? '+' : '') + cur(row.savings),
+      color: row.savings >= 0 ? c.accent : c.red,
+      sub: row.savings >= 0 ? 'Investing surplus' : 'Drawing from portfolio' }
+  ];
+
+  const snapGrid = document.getElementById('ms-snapshot-grid');
+  if (snapGrid) {
+    snapGrid.innerHTML = snap.map(s => `
+      <div class="tool-stat" style="padding:10px 12px">
+        <div class="tool-stat-label">${s.label}</div>
+        <div style="font-family:var(--font-d);font-size:17px;font-weight:700;color:${s.color};line-height:1.1;margin-top:3px">${s.value}</div>
+        ${s.sub ? `<div class="tool-stat-sub">${s.sub}</div>` : ''}
+      </div>`).join('');
+  }
+
+  // ── Events at this exact age ──────────────────────────
+  const currentAge   = row.age;
+  const currentYear  = row.year;
+  const eventsNow    = state.milestones.filter(m => msToAge(m) === currentAge);
+  const eventsEl     = document.getElementById('ms-snapshot-events');
+  if (eventsEl) {
+    if (eventsNow.length) {
+      eventsEl.innerHTML = `<div style="font-size:10px;color:var(--text3);font-family:var(--font-m);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:7px">Life Events at Age ${currentAge}</div>`
+        + eventsNow.map(m => {
+          const col = msTypeColor(m.type);
+          return `<div style="display:flex;align-items:flex-start;gap:9px;padding:8px 10px;background:${col}12;border:1px solid ${col}33;border-radius:7px;margin-bottom:6px">
+            <div style="width:8px;height:8px;border-radius:50%;background:${col};flex-shrink:0;margin-top:4px"></div>
+            <div>
+              <div style="font-weight:700;font-size:13px;color:${col}">${m.name}</div>
+              <div style="font-size:11px;color:var(--text3);margin-top:1px">${m.impact || ''}</div>
+              ${m.txAmount ? `<div style="font-size:11px;font-family:var(--font-m);color:${m.txAmount > 0 ? 'var(--teal)' : 'var(--red)'}">Transaction: ${m.txAmount > 0 ? '+' : ''}${cur(m.txAmount)}</div>` : ''}
+            </div>
+          </div>`;
+        }).join('');
+    } else {
+      eventsEl.innerHTML = `<div style="font-size:12px;color:var(--text3);font-family:var(--font-m);padding:8px 0">No life events at age ${currentAge}</div>`;
+    }
+  }
+
+  // ── Upcoming events table ─────────────────────────────
+  const upcoming = state.milestones
+    .map(m => ({ ...m, _age: msToAge(m) }))
+    .filter(m => m._age >= currentAge)
+    .sort((a, b) => a._age - b._age)
+    .slice(0, 8);
+
+  const upTbody = document.getElementById('ms-upcoming-tbody');
+  if (upTbody) {
+    upTbody.innerHTML = upcoming.length
+      ? upcoming.map(m => {
+          const col     = msTypeColor(m.type);
+          const yrsAway = m._age - currentAge;
+          const txBadge = m.txAmount ? `<span class="badge ${m.txAmount > 0 ? 'teal' : 'red'}">${m.txAmount > 0 ? '+' : ''}${cur(m.txAmount)}</span>` : '—';
+          return `<tr onclick="onMSSlider(${projection.findIndex(r=>r.age===m._age)});document.getElementById('ms-age-slider').value=${projection.findIndex(r=>r.age===m._age)}" style="cursor:pointer">
+            <td><strong style="color:${col}">${m.name}</strong><div style="font-size:10px;color:var(--text3)">${m.impact||''}</div></td>
+            <td><span class="badge" style="background:${col}22;color:${col};border:1px solid ${col}33">${m.type}</span></td>
+            <td class="mono" style="color:${yrsAway===0?'var(--accent)':'var(--text2)'}">${yrsAway === 0 ? 'Now' : yrsAway + ' yrs'}</td>
+            <td>${txBadge}</td>
+          </tr>`;
+        }).join('')
+      : '<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:16px;font-family:var(--font-m);font-size:12px">No future events</td></tr>';
+  }
 }
 
 // =========================================================
@@ -3599,6 +4234,471 @@ function download(filename,data,type){
 }
 
 // =========================================================
+// PLANNING TOOLS — tab switcher
+// =========================================================
+const TOOL_PANELS = ['retire','barista','salsac','sorr'];
+function switchTool(id) {
+  TOOL_PANELS.forEach(t => {
+    document.getElementById('tool-' + t).style.display    = t === id ? 'block' : 'none';
+    document.getElementById('tool-tab-' + t).classList.toggle('active', t === id);
+  });
+}
+
+// ─────────────────────────────────────────────────────────
+// TOOL 1: Retirement Age Reverse Calculator
+// ─────────────────────────────────────────────────────────
+function runRetireCalc() {
+  const p          = state.profile;
+  const R          = blendedReturn();
+  const swr        = parseFloat(document.getElementById('rc-swr').value) || p.swr;
+  const targetNet  = parseFloat(document.getElementById('rc-income').value) || 40000;
+  const useStatePen= document.getElementById('rc-state-pension').value === 'yes';
+  const inflate    = document.getElementById('rc-inflate').value === 'yes';
+  const startPort  = state.investments.accounts.reduce((s,a) => s + a.balance, 0);
+  const annContrib = state.investments.accounts.reduce((s,a) => s + a.monthlyContrib * 12, 0);
+
+  const results = [];
+  for (let retireAge = p.age + 1; retireAge <= p.lifeExp - 5; retireAge++) {
+    const y         = retireAge - p.age;
+    const port      = startPort * Math.pow(1 + R, y) + annContrib * ((Math.pow(1 + R, y) - 1) / R);
+    const inflFactor= inflate ? Math.pow(1 + p.inflation / 100, y) : 1;
+    const needed    = targetNet * inflFactor;
+    const statePen  = useStatePen && retireAge >= p.statePensionAge ? p.statePension * 12 : 0;
+    const drawdown  = Math.max(0, needed - statePen);
+    const reqPort   = drawdown * (100 / swr);
+    const surplus   = port - reqPort;
+    results.push({ retireAge, port, reqPort, surplus, drawdown, needed, statePen, inflFactor });
+    if (surplus >= 0 && results[results.length - 2]?.surplus < 0) break; // first crossing
+  }
+
+  const firstFeasible = results.find(r => r.surplus >= 0);
+  const el = document.getElementById('rc-results');
+
+  if (!firstFeasible) {
+    el.innerHTML = `<div class="alert warning">⚠ Portfolio never reaches the required level within your life expectancy at the current savings rate. Try reducing the target income, increasing contributions, or pushing retirement later.</div>`;
+    document.getElementById('rc-chart-panel').style.display = 'none';
+    return;
+  }
+
+  const yrsEarlier  = p.retireAge - firstFeasible.retireAge;
+  const shortfall   = results[0].reqPort - results[0].port;
+  const pctFunded   = (results[0].port / results[0].reqPort * 100).toFixed(0);
+
+  el.innerHTML = `
+    <div class="tool-result-grid" style="margin-bottom:14px">
+      <div class="tool-stat good">
+        <div class="tool-stat-label">Earliest Retirement Age</div>
+        <div class="tool-stat-value">Age ${firstFeasible.retireAge}</div>
+        <div class="tool-stat-sub">${yrsEarlier > 0 ? yrsEarlier + ' yrs earlier than planned' : yrsEarlier < 0 ? Math.abs(yrsEarlier) + ' yrs later than planned' : 'Same as planned'}</div>
+      </div>
+      <div class="tool-stat blue">
+        <div class="tool-stat-label">Portfolio Required</div>
+        <div class="tool-stat-value">${cur(firstFeasible.reqPort)}</div>
+        <div class="tool-stat-sub">${swr}% SWR on ${cur(firstFeasible.drawdown)} withdrawal</div>
+      </div>
+      <div class="tool-stat ${firstFeasible.surplus >= 0 ? 'good' : 'bad'}">
+        <div class="tool-stat-label">Portfolio at That Age</div>
+        <div class="tool-stat-value">${cur(firstFeasible.port)}</div>
+        <div class="tool-stat-sub">${cur(Math.abs(firstFeasible.surplus))} ${firstFeasible.surplus >= 0 ? 'above target' : 'below target'}</div>
+      </div>
+      <div class="tool-stat warn">
+        <div class="tool-stat-label">Today's Funding Level</div>
+        <div class="tool-stat-value">${pctFunded}%</div>
+        <div class="tool-stat-sub">${shortfall > 0 ? cur(shortfall) + ' gap to fill' : 'Already funded'}</div>
+      </div>
+    </div>
+    ${firstFeasible.statePen > 0 ? `<div class="alert success" style="margin-top:10px">✓ State pension of ${cur(firstFeasible.statePen)} p.a. reduces required drawdown from ${cur(firstFeasible.needed)} to ${cur(firstFeasible.drawdown)}.</div>` : ''}`;
+
+  // Build chart
+  const c = getThemeColors();
+  destroyChart('chart-rc-timeline');
+  const ages    = results.map(r => r.retireAge);
+  charts['chart-rc-timeline'] = new Chart(document.getElementById('chart-rc-timeline'), {
+    type: 'line',
+    data: { labels: ages, datasets: [
+      { label: 'Projected Portfolio', data: results.map(r => r.port), borderColor: c.accent, backgroundColor: `${c.accent}18`, fill: true, tension: 0.4, pointRadius: 0, borderWidth: 2.5 },
+      { label: 'Required Portfolio',  data: results.map(r => r.reqPort), borderColor: c.amber, borderDash: [6,4], fill: false, tension: 0.4, pointRadius: 0, borderWidth: 2 }
+    ]},
+    options: { ...cOpts(), plugins: { ...cOpts().plugins, tooltip: { ...cOpts().plugins.tooltip,
+      callbacks: { afterBody: ctx => { const r = results[ctx[0]?.dataIndex]; return r ? [`Surplus: ${r.surplus >= 0 ? '+' : ''}${cur(r.surplus)}`] : []; }}
+    }}}
+  });
+  document.getElementById('rc-chart-panel').style.display = 'block';
+}
+
+// ─────────────────────────────────────────────────────────
+// TOOL 2: Barista FIRE Bridge
+// ─────────────────────────────────────────────────────────
+function runBaristaCalc() {
+  const p           = state.profile;
+  const startAge    = parseInt(document.getElementById('bf-start-age').value) || p.age;
+  const endAge      = parseInt(document.getElementById('bf-end-age').value)   || p.retireAge;
+  const bridgeInc   = parseFloat(document.getElementById('bf-income').value)  || 0;
+  const bridgeExp   = parseFloat(document.getElementById('bf-expenses').value)|| 0;
+  const replaceMode = document.getElementById('bf-replace').value === 'replace';
+
+  if (startAge >= endAge) { showToast('Start age must be less than end age', false); return; }
+  if (startAge < p.age)   { showToast('Start age cannot be before current age', false); return; }
+
+  // Build two projections: base and barista
+  const baseProj = buildProjection();
+
+  // For barista: during [startAge, endAge), override income streams
+  // We inject income/expense overrides by temporarily mutating state, then restore
+  const origIncome   = JSON.parse(JSON.stringify(state.income));
+  const origExpenses = JSON.parse(JSON.stringify(state.expenses));
+
+  if (replaceMode) {
+    // Zero out all employment income during bridge period
+    state.income = state.income.map(i => {
+      if (i.type === 'Employment' || i.type === 'Self-Employment') {
+        return { ...i, untilAge: Math.min(i.untilAge || 999, startAge) };
+      }
+      return i;
+    });
+  }
+  // Add bridge income stream
+  const bridgeStream = { id: 99999, name: 'Barista / Part-Time', monthly: bridgeInc, type: 'Employment', fromAge: startAge, untilAge: endAge, growthRate: 0 };
+  state.income = [...state.income, bridgeStream];
+
+  // Add expense reduction if set
+  if (bridgeExp > 0) {
+    state.expenses = state.expenses.map(e => {
+      const fa = e.fromAge || 0;
+      const ua = e.untilAge || 99;
+      if (p.age >= fa || startAge >= fa) {
+        return { ...e, monthly: Math.max(0, e.monthly - bridgeExp / state.expenses.length) };
+      }
+      return e;
+    });
+  }
+
+  const baristaProj = buildProjection();
+
+  // Restore state
+  state.income   = origIncome;
+  state.expenses = origExpenses;
+
+  // Compare FIRE ages
+  const baseFire    = baseProj.find(r => r.fireReached);
+  const baristaFire = baristaProj.find(r => r.fireReached);
+  const baseFIREAge    = baseFire?.age    || '—';
+  const baristaFIREAge = baristaFire?.age || '—';
+  const diff = typeof baristaFIREAge === 'number' && typeof baseFIREAge === 'number'
+    ? baseFIREAge - baristaFIREAge : null;
+
+  const baseAtRetire    = baseProj.find(r => r.age === p.retireAge)    || baseProj[baseProj.length - 1];
+  const baristaAtRetire = baristaProj.find(r => r.age === p.retireAge) || baristaProj[baristaProj.length - 1];
+
+  const el = document.getElementById('bf-results');
+  el.innerHTML = `
+    <div class="tool-result-grid" style="margin-bottom:14px">
+      <div class="tool-stat good">
+        <div class="tool-stat-label">Barista FIRE Age</div>
+        <div class="tool-stat-value">${baristaFIREAge}</div>
+        <div class="tool-stat-sub">${diff !== null ? (diff > 0 ? diff + ' yrs earlier than base' : diff < 0 ? Math.abs(diff) + ' yrs later than base' : 'No change') : 'Base case never reaches FIRE'}</div>
+      </div>
+      <div class="tool-stat blue">
+        <div class="tool-stat-label">Base Case FIRE Age</div>
+        <div class="tool-stat-value">${baseFIREAge}</div>
+        <div class="tool-stat-sub">Current plan without bridge</div>
+      </div>
+      <div class="tool-stat ${baristaAtRetire.netWorth >= baseAtRetire.netWorth ? 'good' : 'warn'}">
+        <div class="tool-stat-label">Net Worth @ Retire Age</div>
+        <div class="tool-stat-value">${cur(baristaAtRetire.netWorth)}</div>
+        <div class="tool-stat-sub">${cur(Math.abs(baristaAtRetire.netWorth - baseAtRetire.netWorth))} ${baristaAtRetire.netWorth >= baseAtRetire.netWorth ? 'more' : 'less'} than base</div>
+      </div>
+      <div class="tool-stat warn">
+        <div class="tool-stat-label">Bridge Income/mo</div>
+        <div class="tool-stat-value">£${bridgeInc.toLocaleString()}</div>
+        <div class="tool-stat-sub">Ages ${startAge}–${endAge} · ${replaceMode ? 'Replaces' : 'Adds to'} employment</div>
+      </div>
+    </div>
+    <div class="alert ${diff > 0 ? 'success' : diff === 0 ? 'info' : 'warning'}" style="margin-top:0">
+      ${diff > 0 ? `✓ The Barista bridge moves your FIRE date forward by <strong>${diff} years</strong> by maintaining income during the transition.`
+       : diff === 0 ? `ℹ The bridge makes no material difference to your FIRE date — the income matches your current trajectory.`
+       : diff < 0 ? `⚠ The bridge actually delays FIRE by ${Math.abs(diff)} years — the reduced income outweighs the lower expenses.`
+       : 'ℹ Run the base case first to compare properly.'}
+    </div>`;
+
+  // Chart
+  const c = getThemeColors();
+  destroyChart('chart-bf-compare');
+  const ages = baseProj.map(r => r.age);
+  charts['chart-bf-compare'] = new Chart(document.getElementById('chart-bf-compare'), {
+    type: 'line',
+    data: { labels: ages, datasets: [
+      { label: 'Base Case', data: baseProj.map(r => r.investPortfolio), borderColor: c.blue, fill: false, tension: 0.4, pointRadius: 0, borderWidth: 2, borderDash: [5,4] },
+      { label: 'Barista Bridge', data: baristaProj.map(r => r.investPortfolio), borderColor: c.accent, backgroundColor: `${c.accent}12`, fill: true, tension: 0.4, pointRadius: 0, borderWidth: 2.5 },
+      { label: 'FIRE Target', data: baseProj.map(r => r.fireTarget), borderColor: c.amber, borderDash: [4,3], fill: false, tension: 0, pointRadius: 0, borderWidth: 1.5 }
+    ]},
+    options: cOpts()
+  });
+  document.getElementById('bf-chart-panel').style.display = 'block';
+}
+
+// ─────────────────────────────────────────────────────────
+// TOOL 3: Salary Sacrifice Optimiser
+// ─────────────────────────────────────────────────────────
+function runSalSacCalc() {
+  const grossSalary  = parseFloat(document.getElementById('ss-salary').value)   || 60000;
+  const employerPct  = parseFloat(document.getElementById('ss-employer').value) || 0;
+  const fromPct      = parseInt(document.getElementById('ss-from').value)       || 0;
+  const toPct        = parseInt(document.getElementById('ss-to').value)         || 30;
+  const regime       = document.getElementById('ss-regime').value;
+
+  const rows = [];
+  let   bestRow = null;
+
+  // UK salary sacrifice: contribution reduces gross salary for tax AND NI
+  // (Standard pension relief via net pay arrangement or salary sacrifice)
+  for (let pct = fromPct; pct <= toPct; pct++) {
+    const sacrifice    = grossSalary * (pct / 100);
+    const reducedSal   = Math.max(0, grossSalary - sacrifice);
+    const empContrib   = grossSalary * (employerPct / 100);
+    const totalPension = sacrifice + empContrib;
+
+    // Tax on reduced salary
+    const txResult  = calcTax(reducedSal, regime);
+    const incomeTax = txResult.income;
+    const ni        = txResult.ni;
+
+    // Compare to baseline (pct=0)
+    const baseResult  = calcTax(grossSalary, regime);
+    const taxSaving   = baseResult.income - incomeTax;
+    const niSaving    = baseResult.ni     - ni;
+
+    const takeHome  = reducedSal - incomeTax - ni;
+    const totalSaving = taxSaving + niSaving;
+    // Efficiency: extra pension per £1 cost to take-home
+    const baselineTakeHome = grossSalary - baseResult.income - baseResult.ni;
+    const takeHomeCost     = baselineTakeHome - takeHome;
+    const efficiency       = takeHomeCost > 0 ? ((sacrifice + totalSaving) / takeHomeCost).toFixed(2) : '∞';
+
+    rows.push({ pct, sacrifice, empContrib, totalPension, incomeTax, ni, taxSaving, niSaving, takeHome, efficiency, totalSaving, baselineTakeHome });
+
+    // Best = highest take-home + pension within sensible bounds (not 0%)
+    if (pct > 0 && (!bestRow || rows[rows.length-1].takeHome + rows[rows.length-1].totalPension > bestRow.takeHome + bestRow.totalPension)) {
+      bestRow = rows[rows.length - 1];
+    }
+  }
+
+  // Find the "sweet spot" — highest marginal efficiency before take-home drop becomes painful
+  // Practical: find where marginal tax saving per extra £1 sacrifice starts diminishing significantly
+  let sweetSpot = rows.find(r => r.pct > 0) || rows[0];
+  for (let i = 1; i < rows.length - 1; i++) {
+    const marginalSaving  = rows[i].totalSaving - rows[i-1].totalSaving;
+    const marginalCost    = rows[i-1].takeHome   - rows[i].takeHome;
+    if (marginalCost > 0 && marginalSaving / marginalCost < 0.3) { sweetSpot = rows[i-1]; break; }
+    sweetSpot = rows[i];
+  }
+
+  const el = document.getElementById('ss-results');
+  const baseline = rows[0];
+  el.innerHTML = `
+    <div class="tool-result-grid" style="margin-bottom:14px">
+      <div class="tool-stat good">
+        <div class="tool-stat-label">Sweet-Spot Contribution</div>
+        <div class="tool-stat-value">${sweetSpot.pct}%</div>
+        <div class="tool-stat-sub">${cur(sweetSpot.sacrifice)} p.a. / ${cur(sweetSpot.sacrifice/12)} /mo</div>
+      </div>
+      <div class="tool-stat blue">
+        <div class="tool-stat-label">Total to Pension (incl. employer)</div>
+        <div class="tool-stat-value">${cur(sweetSpot.totalPension)}</div>
+        <div class="tool-stat-sub">You: ${cur(sweetSpot.sacrifice)} + Employer: ${cur(sweetSpot.empContrib)}</div>
+      </div>
+      <div class="tool-stat warn">
+        <div class="tool-stat-label">Annual Tax + NI Saving</div>
+        <div class="tool-stat-value">${cur(sweetSpot.taxSaving + sweetSpot.niSaving)}</div>
+        <div class="tool-stat-sub">Tax: ${cur(sweetSpot.taxSaving)} · NI: ${cur(sweetSpot.niSaving)}</div>
+      </div>
+      <div class="tool-stat purple">
+        <div class="tool-stat-label">Take-Home (vs ${cur(baseline.takeHome)} base)</div>
+        <div class="tool-stat-value">${cur(sweetSpot.takeHome)}</div>
+        <div class="tool-stat-sub">${cur(Math.abs(sweetSpot.takeHome - baseline.takeHome))} ${sweetSpot.takeHome < baseline.takeHome ? 'less' : 'more'} than no sacrifice</div>
+      </div>
+    </div>
+    <div class="alert success">✓ At ${sweetSpot.pct}% sacrifice, every £1 you give up in take-home contributes <strong>£${sweetSpot.efficiency}</strong> to your pension (including employer match and tax/NI relief).</div>`;
+
+  // Build sweep chart
+  const c = getThemeColors();
+  destroyChart('chart-ss-sweep');
+  charts['chart-ss-sweep'] = new Chart(document.getElementById('chart-ss-sweep'), {
+    type: 'line',
+    data: { labels: rows.map(r => r.pct + '%'), datasets: [
+      { label: 'Take-Home Pay',         data: rows.map(r => r.takeHome),      borderColor: c.accent, fill: false, tension: 0.3, pointRadius: 2, borderWidth: 2.5 },
+      { label: 'Total Pension (annual)',data: rows.map(r => r.totalPension),  borderColor: c.blue,   fill: false, tension: 0.3, pointRadius: 2, borderWidth: 2 },
+      { label: 'Tax + NI Saving',       data: rows.map(r => r.taxSaving + r.niSaving), borderColor: c.amber, borderDash:[4,3], fill:false, tension:0.3, pointRadius:2, borderWidth:1.5 }
+    ]},
+    options: {
+      ...cOpts(),
+      onClick: (e, els) => {
+        if (!els.length) return;
+        const row = rows[els[0].index];
+        showToast(`${row.pct}% sacrifice: take-home ${cur(row.takeHome)}, pension ${cur(row.totalPension)}`, true);
+      }
+    }
+  });
+
+  // Build table
+  document.getElementById('ss-table-tbody').innerHTML = rows.map(r => {
+    const isSweet = r.pct === sweetSpot.pct;
+    return `<tr class="${isSweet ? 'ss-opt-row' : ''}">
+      <td class="mono">${r.pct}% ${isSweet ? '⭐' : ''}</td>
+      <td class="mono">${cur(r.sacrifice)}</td>
+      <td class="mono">${cur(r.empContrib)}</td>
+      <td class="mono pos">${cur(r.totalPension)}</td>
+      <td class="mono" style="color:var(--accent)">${cur(r.taxSaving)}</td>
+      <td class="mono" style="color:var(--teal)">${cur(r.niSaving)}</td>
+      <td class="mono ${r.takeHome < baseline.takeHome ? 'neg' : ''}">${cur(r.takeHome)}</td>
+      <td class="mono" style="color:var(--blue)">${r.efficiency}×</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('ss-chart-panel').style.display = 'block';
+  document.getElementById('ss-table-panel').style.display = 'block';
+}
+
+// ─────────────────────────────────────────────────────────
+// TOOL 4: Sequence-of-Returns Risk
+// ─────────────────────────────────────────────────────────
+function runSOrrCalc() {
+  const p          = state.profile;
+  const R          = blendedReturn();
+  const simYears   = parseInt(document.getElementById('sorr-years').value)      || 30;
+  const injectYear = parseInt(document.getElementById('sorr-inject-year').value)|| 1;
+  const recovery   = (parseFloat(document.getElementById('sorr-recovery').value) || R * 100) / 100;
+
+  // Portfolio at retirement
+  const retireRow  = projection.find(r => r.age === p.retireAge) || projection[Math.min(projection.length-1, p.retireAge - p.age)];
+  const startPort  = parseFloat(document.getElementById('sorr-portfolio').value) || retireRow?.investPortfolio || 500000;
+
+  // Annual withdrawal
+  const annExp     = state.expenses.reduce((s,e) => s + e.monthly * 12, 0);
+  const withdrawal = parseFloat(document.getElementById('sorr-withdrawal').value) || annExp * (p.swr / 100) * Math.pow(1 + p.inflation / 100, p.retireAge - p.age);
+
+  const retireAge  = p.retireAge;
+  const c          = getThemeColors();
+
+  // Simulate each scenario: normal returns with crash injected at injectYear
+  const scenarios  = [
+    { name: 'No Crash (baseline)', seq: [], color: c.accent },
+    { name: '1973-74 Stagflation', seq: STRESS_SEQUENCES['1973-74 Stagflation'], color: '#f97316' },
+    { name: '2000-02 Dot-com',     seq: STRESS_SEQUENCES['2000-02 Dot-com Bust'], color: c.red },
+    { name: '2008-09 GFC',         seq: STRESS_SEQUENCES['2008-09 GFC'], color: '#e879f9' },
+    { name: '1987 Black Monday',   seq: STRESS_SEQUENCES['1987 Black Monday Year'], color: c.amber },
+    { name: '2022 Rate Shock',     seq: STRESS_SEQUENCES['2022 Rate Shock'], color: c.blue },
+    { name: '1929-32 Depression',  seq: STRESS_SEQUENCES['1929-32 Great Depression'], color: c.purple },
+  ];
+
+  const allPaths = scenarios.map(sc => {
+    const path = [startPort];
+    let port   = startPort;
+    let lowest = startPort;
+    let recovAge = null;
+
+    for (let yr = 1; yr <= simYears; yr++) {
+      // Determine this year's return
+      let ret;
+      const crashActive = yr >= injectYear && yr < injectYear + sc.seq.length;
+      if (crashActive) {
+        ret = sc.seq[yr - injectYear] / 100;
+      } else {
+        ret = recovery;
+      }
+      port = Math.max(0, port * (1 + ret) - withdrawal);
+      path.push(port);
+      if (port < lowest) lowest = port;
+      if (port > startPort * 0.8 && recovAge === null && yr > injectYear + sc.seq.length) recovAge = retireAge + yr;
+    }
+
+    const survived   = port > 0;
+    const finalPort  = port;
+    const portAfterCrash = path[injectYear + sc.seq.length] || startPort;
+
+    return { ...sc, path, survived, finalPort, portAfterCrash, lowest, recovAge };
+  });
+
+  // Results panel
+  const el = document.getElementById('sorr-results');
+  const survived = allPaths.filter(s => s.survived).length;
+  el.innerHTML = `
+    <div class="tool-result-grid" style="margin-bottom:14px">
+      <div class="tool-stat ${survived >= 6 ? 'good' : survived >= 4 ? 'warn' : 'bad'}">
+        <div class="tool-stat-label">Scenarios Survived</div>
+        <div class="tool-stat-value">${survived} / ${scenarios.length}</div>
+        <div class="tool-stat-sub">Over ${simYears} years at ${cur(withdrawal)} p.a. withdrawal</div>
+      </div>
+      <div class="tool-stat blue">
+        <div class="tool-stat-label">Starting Portfolio</div>
+        <div class="tool-stat-value">${cur(startPort)}</div>
+        <div class="tool-stat-sub">At retirement age ${retireAge}</div>
+      </div>
+      <div class="tool-stat warn">
+        <div class="tool-stat-label">Worst-Case Final Value</div>
+        <div class="tool-stat-value">${cur(Math.min(...allPaths.map(s => s.finalPort)))}</div>
+        <div class="tool-stat-sub">${allPaths.find(s => s.finalPort === Math.min(...allPaths.map(s => s.finalPort)))?.name}</div>
+      </div>
+      <div class="tool-stat good">
+        <div class="tool-stat-label">Baseline Final Value</div>
+        <div class="tool-stat-value">${cur(allPaths[0].finalPort)}</div>
+        <div class="tool-stat-sub">No crash scenario after ${simYears} years</div>
+      </div>
+    </div>
+    ${survived < scenarios.length ? `<div class="alert warning">⚠ ${scenarios.length - survived} scenario(s) would deplete the portfolio. Consider: reducing withdrawal by 10-15%, holding a 2-year cash buffer, or maintaining part-time income in early retirement years.</div>` : `<div class="alert success">✓ Your portfolio survives all ${scenarios.length} historical crash scenarios over ${simYears} years. Strong sequence-of-returns resilience.</div>`}`;
+
+  // Chart
+  destroyChart('chart-sorr');
+  const ages = Array.from({ length: simYears + 1 }, (_, i) => retireAge + i);
+  charts['chart-sorr'] = new Chart(document.getElementById('chart-sorr'), {
+    type: 'line',
+    data: { labels: ages, datasets: allPaths.map(sc => ({
+      label:       sc.name,
+      data:        sc.path,
+      borderColor: sc.color,
+      backgroundColor: sc.name.includes('baseline') ? `${sc.color}18` : 'transparent',
+      fill:        sc.name.includes('baseline'),
+      tension:     0.3,
+      pointRadius: 0,
+      borderWidth: sc.name.includes('baseline') ? 3 : 1.8,
+      borderDash:  sc.name.includes('baseline') ? [] : []
+    }))},
+    options: {
+      ...cOpts(),
+      plugins: {
+        ...cOpts().plugins,
+        tooltip: {
+          ...cOpts().plugins.tooltip,
+          callbacks: {
+            afterBody: ctx => {
+              const yr = ctx[0]?.dataIndex;
+              return yr !== undefined ? [`Year ${yr} of retirement`] : [];
+            }
+          }
+        }
+      }
+    }
+  });
+
+  // Table
+  document.getElementById('sorr-table-tbody').innerHTML = allPaths.map(sc => {
+    const crashStr = sc.seq.length ? sc.seq.map(r => (r >= 0 ? '+' : '') + r + '%').join(', ') : 'None';
+    return `<tr>
+      <td><strong>${sc.name}</strong></td>
+      <td class="mono" style="color:${sc.seq.some(r=>r<-20)?'var(--red)':'var(--amber)'}">${crashStr}</td>
+      <td class="mono">${cur(sc.portAfterCrash)}</td>
+      <td class="mono ${sc.survived ? 'pos' : 'neg'}">${cur(sc.finalPort)}</td>
+      <td><span class="${sc.survived ? 'sorr-survived' : 'sorr-depleted'}">${sc.survived ? '✓ Survived' : '✗ Depleted'}</span></td>
+      <td class="mono neg">${cur(sc.lowest)}</td>
+      <td class="mono">${sc.recovAge ? 'Age ' + sc.recovAge : '—'}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('sorr-chart-panel').style.display = 'block';
+  document.getElementById('sorr-table-panel').style.display = 'block';
+}
+
+// =========================================================
 // TOAST
 // =========================================================
 function showToast(msg,ok=true){
@@ -3615,8 +4715,9 @@ function showView(id){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   const view=document.getElementById('view-'+id);if(view)view.classList.add('active');
   document.querySelectorAll('.nav-item').forEach(n=>{if(n.getAttribute('onclick')?.includes(`'${id}'`))n.classList.add('active');});
-  const T={dashboard:'Dashboard',networth:'Net Worth',profile:'Profile & Assumptions',income:'Income & Expenses',assets:'Assets & Debts',investments:'Investments & Portfolio',montecarlo:'Monte Carlo Simulation',scenarios:'Scenario Analysis',cashflow:'Cash Flow Analysis',tax:'Tax Modelling',milestones:'Life Events & Milestones',estate:'Estate & Legacy Planning',progress:'Progress Tracking',export:'Export / Import'};
+  const T={dashboard:'Dashboard',networth:'Net Worth',profile:'Profile & Assumptions',income:'Income & Expenses',assets:'Assets & Debts',investments:'Investments & Portfolio',montecarlo:'Monte Carlo Simulation',scenarios:'Scenario Analysis',cashflow:'Cash Flow Analysis',tax:'Tax Modelling',tools:'Planning Tools',milestones:'Life Events & Milestones',estate:'Estate & Legacy Planning',progress:'Progress Tracking',export:'Export / Import'};
   document.getElementById('topbar-title').textContent=T[id]||id;
+  if(id==='tools'){ switchTool('retire'); }  // ensure first tab shown
   if(id==='investments'){renderAllocationSliders();renderAccountsTable();}
   if(id==='milestones')updateMilestones();
   if(id==='progress')renderProgressTable();
