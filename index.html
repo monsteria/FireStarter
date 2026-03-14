@@ -319,30 +319,73 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15)}
 
   <!-- NET WORTH -->
   <div class="view" id="view-networth">
-    <div class="grid-4 mb">
+    <!-- KPI summary row -->
+    <div class="grid-4 mb" style="grid-template-columns:repeat(5,1fr)">
       <div class="kpi green"><div class="kpi-label">Total Assets</div><div class="kpi-value" id="nw-assets">£0</div><div class="kpi-sub">Investments + property + cash</div></div>
       <div class="kpi red"><div class="kpi-label">Total Liabilities</div><div class="kpi-value" id="nw-liabilities">£0</div></div>
       <div class="kpi blue"><div class="kpi-label">Net Worth</div><div class="kpi-value" id="nw-net">£0</div></div>
       <div class="kpi amber"><div class="kpi-label">Projected @ 65</div><div class="kpi-value" id="nw-at65">£0</div></div>
+      <div class="kpi purple"><div class="kpi-label">FIRE Target</div><div class="kpi-value" id="nw-fire-target">£0</div><div class="kpi-sub" id="nw-fire-sub">25× expenses</div></div>
     </div>
-    <div class="panel"><div class="panel-header"><span>📈</span><span class="panel-title">Net Worth Over Time</span></div><div class="panel-body"><div class="chart-container" style="height:290px"><canvas id="chart-nw-full"></canvas></div></div></div>
-    <div class="grid-2">
-      <div class="panel"><div class="panel-header"><span>📊</span><span class="panel-title">Asset Stack Over Time</span></div><div class="panel-body"><div class="chart-container" style="height:230px"><canvas id="chart-asset-stack"></canvas></div></div></div>
-      <div class="panel"><div class="panel-header"><span>📉</span><span class="panel-title">Debt Payoff Schedule</span></div><div class="panel-body"><div class="chart-container" style="height:230px"><canvas id="chart-debt"></canvas></div></div></div>
-    </div>
-    <!-- Change 5: Liquid cash runway panel -->
+
+    <!-- Timeline Stacked Area Chart with slider -->
     <div class="panel">
-      <div class="panel-header"><span>💧</span><span class="panel-title">Liquid Asset Runway</span><span class="kpi-info" onclick="showInfo('liquidRunout')" style="margin-left:4px">i</span></div>
-      <div class="panel-body">
-        <div class="chart-container" style="height:200px"><canvas id="chart-liquid-runway"></canvas></div>
-        <div id="liquid-runout-info" style="margin-top:14px;font-size:12px;color:var(--text2)"></div>
+      <div class="panel-header">
+        <span>📈</span>
+        <span class="panel-title">Net Worth Timeline — Asset Breakdown</span>
+        <span style="margin-left:auto;font-size:11px;color:var(--text3);font-family:var(--font-m)" id="nw-timeline-label">Age — · £—</span>
+      </div>
+      <div class="panel-body" style="padding-bottom:10px">
+        <div class="chart-container" style="height:300px"><canvas id="chart-nw-stacked"></canvas></div>
+        <!-- Slider -->
+        <div style="padding:14px 4px 4px">
+          <input type="range" id="nw-age-slider" min="0" max="100" value="0"
+            style="width:100%" oninput="onNWSlider(this.value)">
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);font-family:var(--font-m);margin-top:4px" id="nw-slider-labels"></div>
+        </div>
       </div>
     </div>
-    <!-- Change 2: Debt payoff schedule table -->
-    <div class="panel">
-      <div class="panel-header"><span>📅</span><span class="panel-title">Mortgage &amp; Debt Payoff Dates</span></div>
-      <div class="panel-body" style="padding:0">
-        <table class="data-table"><thead><tr><th>Debt</th><th>Balance</th><th>Rate</th><th>Monthly Pmt</th><th>Payoff Year</th><th>Payoff Age</th><th>Years Remaining</th></tr></thead><tbody id="debt-payoff-tbody"></tbody></table>
+
+    <!-- Detail panel: updates as slider moves -->
+    <div class="grid-2">
+      <!-- Left: asset breakdown at selected age -->
+      <div class="panel">
+        <div class="panel-header">
+          <span>📊</span>
+          <span class="panel-title">Asset &amp; Liability Breakdown</span>
+          <span style="font-size:11px;color:var(--text3);font-family:var(--font-m);margin-left:4px" id="nw-detail-age">(Age —)</span>
+        </div>
+        <div class="panel-body" style="padding:0;overflow-x:auto">
+          <table class="data-table" id="nw-detail-table">
+            <thead><tr><th>Category</th><th>Value</th><th>% of Net Worth</th><th>Change vs Today</th></tr></thead>
+            <tbody id="nw-detail-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <!-- Right: doughnut of asset mix + key metrics -->
+      <div class="panel">
+        <div class="panel-header"><span>🥧</span><span class="panel-title">Asset Mix</span></div>
+        <div class="panel-body">
+          <div class="chart-container" style="height:190px"><canvas id="chart-nw-donut"></canvas></div>
+          <div id="nw-metrics-strip" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Debt payoff + liquid runway side by side -->
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-header"><span>💧</span><span class="panel-title">Liquid Asset Runway</span><span class="kpi-info" onclick="showInfo('liquidRunout')" style="margin-left:4px">i</span></div>
+        <div class="panel-body">
+          <div class="chart-container" style="height:190px"><canvas id="chart-liquid-runway"></canvas></div>
+          <div id="liquid-runout-info" style="margin-top:12px;font-size:12px;color:var(--text2)"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><span>📉</span><span class="panel-title">Debt Payoff Schedule</span></div>
+        <div class="panel-body" style="padding:0">
+          <table class="data-table"><thead><tr><th>Debt</th><th>Balance</th><th>Rate</th><th>Monthly Pmt</th><th>Payoff Year</th><th>Payoff Age</th><th>Years Left</th></tr></thead><tbody id="debt-payoff-tbody"></tbody></table>
+        </div>
       </div>
     </div>
   </div>
@@ -367,8 +410,29 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15)}
         <div class="panel-header"><span>⚙</span><span class="panel-title">Model Assumptions</span></div>
         <div class="panel-body">
           <div class="form-row"><div class="form-group"><label class="form-label">Investment Return % p.a.</label><input type="number" class="form-input" id="p-return" value="7" step="0.1"></div><div class="form-group"><label class="form-label">Inflation Rate % p.a.</label><input type="number" class="form-input" id="p-inflation" value="2.5" step="0.1"></div></div>
-          <div class="form-row"><div class="form-group"><label class="form-label">Income Growth % p.a.</label><input type="number" class="form-input" id="p-income-growth" value="3" step="0.1"></div><div class="form-group"><label class="form-label">Safe Withdrawal Rate %<span class="kpi-info" onclick="showInfo('swr')" style="margin-left:4px">i</span></label><input type="number" class="form-input" id="p-swr" value="4" step="0.1"></div></div>
-          <div class="form-row"><div class="form-group"><label class="form-label">Return Volatility σ %<span class="kpi-info" onclick="showInfo('volatility')" style="margin-left:4px">i</span></label><input type="number" class="form-input" id="p-volatility" value="12" step="0.5"></div><div class="form-group"><label class="form-label">Non-Investable Asset Growth %</label><input type="number" class="form-input" id="p-asset-growth" value="3.5" step="0.1"><div class="form-hint">Property, cash etc.</div></div></div>
+          <div class="form-row"><div class="form-group"><label class="form-label">Income Growth % p.a.</label><input type="number" class="form-input" id="p-income-growth" value="3" step="0.1"></div><div class="form-group"><label class="form-label">Non-Investable Asset Growth %</label><input type="number" class="form-input" id="p-asset-growth" value="3.5" step="0.1"><div class="form-hint">Property, cash etc.</div></div></div>
+          <div class="form-row"><div class="form-group"><label class="form-label">Return Volatility σ %<span class="kpi-info" onclick="showInfo('volatility')" style="margin-left:4px">i</span></label><input type="number" class="form-input" id="p-volatility" value="12" step="0.5"></div><div class="form-group"></div></div>
+          <!-- FIRE target: SWR or expense multiple — linked inputs -->
+          <div style="background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:14px;margin-bottom:14px">
+            <div style="font-size:10px;color:var(--accent);font-family:var(--font-m);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;font-weight:600">🎯 FIRE Target Method <span class="kpi-info" onclick="showInfo('swr')" style="margin-left:4px">i</span></div>
+            <div class="form-row" style="margin-bottom:8px">
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Safe Withdrawal Rate %</label>
+                <input type="number" class="form-input" id="p-swr" value="4" step="0.1" min="0.5" max="20"
+                  oninput="syncFireMultiple('swr')">
+                <div class="form-hint">4% = classic Trinity Study</div>
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Expense Multiple (×)</label>
+                <input type="number" class="form-input" id="p-fire-multiple" value="25" step="0.5" min="5" max="200"
+                  oninput="syncFireMultiple('multiple')">
+                <div class="form-hint">25× = equivalent to 4% SWR</div>
+              </div>
+            </div>
+            <div style="font-size:11px;color:var(--text3);font-family:var(--font-m);padding-top:6px;border-top:1px solid var(--border)">
+              FIRE target = <span id="p-fire-formula" style="color:var(--accent)">annual expenses × 25 = SWR 4%</span>
+            </div>
+          </div>
           <button class="btn primary" style="width:100%;padding:10px;margin-top:4px" onclick="saveProfile()">✓ Save &amp; Recalculate</button>
         </div>
       </div>
@@ -841,7 +905,8 @@ function getDefaultState() {
     profile: {
       age: 32, retireAge: 55, lifeExp: 90, taxRegime: 'uk', currency: '£',
       returnRate: 7, inflation: 2.5, incomeGrowth: 3, swr: 4, volatility: 12,
-      statePensionAge: 67, statePension: 800, assetGrowth: 3.5
+      statePensionAge: 67, statePension: 800, assetGrowth: 3.5,
+      fireMultiple: 25   // FIRE target = annual expenses × fireMultiple (= 1/SWR)
     },
     // CHANGE 1: income now has fromAge field; type includes drawdown options
     income: [
@@ -1150,7 +1215,7 @@ function buildProjection(ov={}) {
   const n  = Math.max(1, p.lifeExp - p.age);
   const rAdj = (ov.returnAdj||0)/100;
   const inflAdj = (ov.inflationAdj||0)/100;
-  const effectiveSWR = (ov.swrOverride || p.swr) / 100;
+  const effectiveSWR = (ov.swrOverride ? ov.swrOverride / 100 : (p.fireMultiple ? 1/p.fireMultiple : p.swr/100));
 
   // Change 1: Track each account balance separately for per-account returns
   let accountBalances = state.investments.accounts.map(a => a.balance);
@@ -1337,8 +1402,9 @@ function updateKPIs() {
   const monthlySurplus = monthlyIncome-(txResult.income+txResult.ni)/12-monthlyExp-monthlyDebt;
   const savingsRate    = monthlyIncome>0?(monthlySurplus/monthlyIncome)*100:0;
 
+  const fireMultiple  = p.fireMultiple || (100/p.swr);
   const annualExpFIRE = (monthlyExp*12)*Math.pow(1+p.inflation/100,p.retireAge-p.age);
-  const fireTarget    = annualExpFIRE*(100/p.swr);
+  const fireTarget    = annualExpFIRE * fireMultiple;
   const fireRow       = projection.find(r=>r.fireReached);
   const fireAge       = fireRow?fireRow.age:'—';
   const yearsToFire   = fireRow?fireRow.age-p.age:'—';
@@ -1346,7 +1412,7 @@ function updateKPIs() {
 
   document.getElementById('kpi-networth').textContent    = cur(netWorth);
   document.getElementById('kpi-fire').textContent        = cur(fireTarget);
-  document.getElementById('kpi-fire-sub').textContent    = `${p.swr}% SWR × inflated expenses`;
+  document.getElementById('kpi-fire-sub').textContent    = `${p.swr.toFixed(1)}% SWR · ${fireMultiple}× expenses`;
   document.getElementById('kpi-savings').textContent     = cur(monthlySurplus);
   document.getElementById('kpi-savings-rate').textContent= pct(savingsRate)+' savings rate';
   document.getElementById('kpi-fire-age').textContent    = fireAge;
@@ -1360,6 +1426,11 @@ function updateKPIs() {
   document.getElementById('nw-assets').textContent      = cur(investNow+nonInvNow);
   document.getElementById('nw-liabilities').textContent = cur(debtsNow);
   document.getElementById('nw-net').textContent         = cur(netWorth);
+  // FIRE target on NW view
+  const nwFire = document.getElementById('nw-fire-target');
+  if (nwFire) nwFire.textContent = cur(fireTarget);
+  const nwFireSub = document.getElementById('nw-fire-sub');
+  if (nwFireSub) nwFireSub.textContent = `${fireMultiple}× annual expenses`;
   const at65 = projection.find(r=>r.age===65);
   document.getElementById('nw-at65').textContent = at65?cur(at65.netWorth):'—';
 
@@ -1384,85 +1455,400 @@ function updateKPIs() {
 }
 
 // =========================================================
-// CASH FLOW — SANKEY + TIMELINE ENGINE
+// NET WORTH TIMELINE ENGINE
 // =========================================================
+
+// Build the stacked area chart with per-asset-category layers
+function buildNWStackedChart() {
+  if (!projection.length) return;
+  const c = getThemeColors();
+  const ages = projection.map(r => r.age);
+
+  // For each projection row we need per-account type balances.
+  // We track accountBalances[] in buildProjection — but that's internal.
+  // Instead we'll compute approximate proportional splits from starting balances,
+  // then grow each category at its own rate through projection rows.
+  // Categories: ISA/GIA, Pension, Rental Property, Other Investments, Property, Cash, Debt (negative)
+
+  const startISA     = state.investments.accounts.filter(a=>a.type==='ISA'||a.type==='GIA').reduce((s,a)=>s+a.balance,0);
+  const startPension = state.investments.accounts.filter(a=>a.type==='Pension'||a.type==='SIPP'||a.type==='401k'||a.type==='IRA').reduce((s,a)=>s+a.balance,0);
+  const startRental  = state.investments.accounts.filter(a=>a.isRental).reduce((s,a)=>s+a.balance,0);
+  const startOtherInv= state.investments.accounts.filter(a=>!a.isRental&&a.type!=='ISA'&&a.type!=='GIA'&&a.type!=='Pension'&&a.type!=='SIPP'&&a.type!=='401k'&&a.type!=='IRA').reduce((s,a)=>s+a.balance,0);
+  const startProperty= state.assets.filter(a=>a.type==='Property').reduce((s,a)=>s+a.value,0);
+  const startCash    = state.assets.filter(a=>a.type==='Cash').reduce((s,a)=>s+a.value,0);
+  const startOtherAst= state.assets.filter(a=>a.type!=='Property'&&a.type!=='Cash').reduce((s,a)=>s+a.value,0);
+  const startDebt    = state.debts.reduce((s,d)=>s+d.balance,0);
+
+  // Use projection totals to distribute proportionally each year
+  const totalInvStart = startISA+startPension+startRental+startOtherInv;
+  const totalNonStart = startProperty+startCash+startOtherAst;
+
+  const datasets = [
+    {
+      label: 'ISA / GIA',
+      data: projection.map(r => {
+        const share = totalInvStart > 0 ? startISA/totalInvStart : 0.5;
+        return Math.max(0, r.investPortfolio * share);
+      }),
+      backgroundColor: `${c.teal}88`, borderColor: c.teal, borderWidth: 1.5, fill: true, tension: 0.4, pointRadius: 0
+    },
+    {
+      label: 'Pension / SIPP',
+      data: projection.map(r => {
+        const share = totalInvStart > 0 ? startPension/totalInvStart : 0.3;
+        return Math.max(0, r.investPortfolio * share);
+      }),
+      backgroundColor: `${c.purple}77`, borderColor: c.purple, borderWidth: 1.5, fill: true, tension: 0.4, pointRadius: 0
+    },
+    {
+      label: 'Rental Property',
+      data: projection.map(r => {
+        const share = totalInvStart > 0 ? startRental/totalInvStart : 0;
+        return Math.max(0, r.investPortfolio * share);
+      }),
+      backgroundColor: `${c.amber}66`, borderColor: c.amber, borderWidth: 1.5, fill: true, tension: 0.4, pointRadius: 0
+    },
+    {
+      label: 'Other Investments',
+      data: projection.map(r => {
+        const share = totalInvStart > 0 ? startOtherInv/totalInvStart : 0.2;
+        return Math.max(0, r.investPortfolio * share);
+      }),
+      backgroundColor: `${c.blue}66`, borderColor: c.blue, borderWidth: 1.5, fill: true, tension: 0.4, pointRadius: 0
+    },
+    {
+      label: 'Property / Real Estate',
+      data: projection.map(r => {
+        const share = totalNonStart > 0 ? startProperty/totalNonStart : 0.7;
+        return Math.max(0, r.totalNonInv * share);
+      }),
+      backgroundColor: `${c.accent}55`, borderColor: c.accent, borderWidth: 1.5, fill: true, tension: 0.4, pointRadius: 0
+    },
+    {
+      label: 'Cash / Savings',
+      data: projection.map(r => {
+        const share = totalNonStart > 0 ? startCash/totalNonStart : 0.15;
+        return Math.max(0, r.totalNonInv * share);
+      }),
+      backgroundColor: `${c.accent}33`, borderColor: `${c.accent}aa`, borderWidth: 1.5, fill: true, tension: 0.4, pointRadius: 0
+    },
+    {
+      label: 'Debt (negative)',
+      data: projection.map(r => -r.totalDebt),
+      backgroundColor: `${c.red}50`, borderColor: c.red, borderWidth: 1.5, fill: true, tension: 0.4, pointRadius: 0
+    },
+    {
+      label: 'FIRE Target',
+      data: projection.map(r => r.fireTarget),
+      borderColor: c.amber, borderDash: [7,4], backgroundColor: 'transparent',
+      fill: false, tension: 0, pointRadius: 0, borderWidth: 2
+    }
+  ].filter(ds => ds.data.some(v => Math.abs(v) > 100)); // hide empty layers
+
+  destroyChart('chart-nw-stacked');
+  const chart = new Chart(document.getElementById('chart-nw-stacked'), {
+    type: 'line',
+    data: { labels: ages, datasets },
+    options: {
+      ...cOpts(false),
+      interaction: { mode: 'index', intersect: false },
+      onClick: (e, els) => {
+        if (els.length > 0) {
+          const slider = document.getElementById('nw-age-slider');
+          if (slider) { slider.value = els[0].index; onNWSlider(els[0].index); }
+        }
+      },
+      plugins: {
+        ...cOpts().plugins,
+        tooltip: {
+          ...cOpts().plugins.tooltip,
+          callbacks: {
+            title: ctx => `Age ${ctx[0]?.label}`,
+            afterBody: ctx => {
+              const idx = ctx[0]?.dataIndex;
+              const row = idx !== undefined ? projection[idx] : null;
+              if (!row) return [];
+              return [
+                `Net Worth: ${cur(row.netWorth)}`,
+                `FIRE Target: ${cur(row.fireTarget)}`,
+                row.fireReached ? '✓ FIRE target reached' : ''
+              ].filter(Boolean);
+            }
+          }
+        }
+      }
+    }
+  });
+
+  // Add vertical line plugin for slider position
+  chart._nwSliderIdx = 0;
+  const vertLinePlugin = {
+    id: 'nwVertLine',
+    afterDraw(chart) {
+      const idx = chart._nwSliderIdx;
+      if (idx === undefined || idx < 0) return;
+      const meta = chart.getDatasetMeta(0);
+      if (!meta.data[idx]) return;
+      const x = meta.data[idx].x;
+      const ctx = chart.ctx;
+      const yAxis = chart.scales.y;
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(x, yAxis.top);
+      ctx.lineTo(x, yAxis.bottom);
+      ctx.strokeStyle = getThemeColors().text2;
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 3]);
+      ctx.stroke();
+      ctx.restore();
+    }
+  };
+  Chart.register(vertLinePlugin);
+  charts['chart-nw-stacked'] = chart;
+
+  return chart;
+}
+
+function buildNWSlider() {
+  if (!projection.length) return;
+  const slider = document.getElementById('nw-age-slider');
+  if (!slider) return;
+  slider.min = 0;
+  slider.max = projection.length - 1;
+  slider.value = 0;
+
+  // Age labels
+  const labelsEl = document.getElementById('nw-slider-labels');
+  if (labelsEl) {
+    labelsEl.innerHTML = '';
+    labelsEl.style.position = 'relative';
+    const step = Math.ceil(projection.length / 8);
+    projection.forEach((row, i) => {
+      if (i % step === 0 || i === projection.length - 1) {
+        const span = document.createElement('span');
+        span.style.cssText = `position:absolute;left:${(i/(projection.length-1)*100).toFixed(1)}%;transform:translateX(-50%)`;
+        span.textContent = row.age;
+        labelsEl.appendChild(span);
+      }
+    });
+  }
+  onNWSlider(0);
+}
+
+function onNWSlider(idx) {
+  idx = parseInt(idx);
+  const row = projection[idx];
+  if (!row) return;
+
+  // Update chart vertical line
+  const chart = charts['chart-nw-stacked'];
+  if (chart) { chart._nwSliderIdx = idx; chart.update('none'); }
+
+  // Update label
+  const label = document.getElementById('nw-timeline-label');
+  if (label) label.textContent = `Age ${row.age} · ${row.year} · ${cur(row.netWorth)}`;
+  const ageLabel = document.getElementById('nw-detail-age');
+  if (ageLabel) ageLabel.textContent = `(Age ${row.age})`;
+
+  const p = state.profile;
+  const c = getThemeColors();
+
+  // Compute approximate per-category values at this index
+  const totalInvStart = state.investments.accounts.reduce((s,a)=>s+a.balance,0);
+  const totalNonStart = state.assets.reduce((s,a)=>s+a.value,0);
+  const safeShare = (start, total) => total > 0 ? start/total : 0;
+
+  const startISA      = state.investments.accounts.filter(a=>a.type==='ISA'||a.type==='GIA').reduce((s,a)=>s+a.balance,0);
+  const startPension  = state.investments.accounts.filter(a=>a.type==='Pension'||a.type==='SIPP'||a.type==='401k'||a.type==='IRA').reduce((s,a)=>s+a.balance,0);
+  const startRental   = state.investments.accounts.filter(a=>a.isRental).reduce((s,a)=>s+a.balance,0);
+  const startOtherInv = state.investments.accounts.filter(a=>!a.isRental&&a.type!=='ISA'&&a.type!=='GIA'&&a.type!=='Pension'&&a.type!=='SIPP'&&a.type!=='401k'&&a.type!=='IRA').reduce((s,a)=>s+a.balance,0);
+  const startProperty = state.assets.filter(a=>a.type==='Property').reduce((s,a)=>s+a.value,0);
+  const startCash     = state.assets.filter(a=>a.type==='Cash').reduce((s,a)=>s+a.value,0);
+  const startOtherAst = state.assets.filter(a=>a.type!=='Property'&&a.type!=='Cash').reduce((s,a)=>s+a.value,0);
+
+  const cats = [
+    { name: '💎 ISA / GIA',             val: row.investPortfolio * safeShare(startISA,     totalInvStart), color: c.teal   },
+    { name: '🏦 Pension / SIPP',         val: row.investPortfolio * safeShare(startPension, totalInvStart), color: c.purple },
+    { name: '🏠 Rental Property',        val: row.investPortfolio * safeShare(startRental,  totalInvStart), color: c.amber  },
+    { name: '📊 Other Investments',      val: row.investPortfolio * safeShare(startOtherInv,totalInvStart), color: c.blue   },
+    { name: '🏡 Property / Real Estate', val: row.totalNonInv     * safeShare(startProperty,totalNonStart), color: c.accent },
+    { name: '💰 Cash / Savings',         val: row.totalNonInv     * safeShare(startCash,    totalNonStart), color: `${c.accent}aa` },
+    { name: '📦 Other Assets',           val: row.totalNonInv     * safeShare(startOtherAst,totalNonStart), color: `${c.blue}aa`   },
+    { name: '🔴 Total Debt',             val: -row.totalDebt,                                                color: c.red    }
+  ].filter(cat => Math.abs(cat.val) > 50);
+
+  // Today's values for change comparison
+  const todayInvest = state.investments.accounts.reduce((s,a)=>s+a.balance,0);
+  const todayNonInv = state.assets.reduce((s,a)=>s+a.value,0);
+  const todayDebt   = state.debts.reduce((s,d)=>s+d.balance,0);
+  const todayNW     = todayInvest + todayNonInv - todayDebt;
+
+  // Detail table
+  const tbody = document.getElementById('nw-detail-tbody');
+  if (tbody) {
+    const nw = row.netWorth || 1;
+    tbody.innerHTML = cats.map(cat => {
+      const pctNW = cat.name.includes('Debt') ? '' : (cat.val/nw*100).toFixed(1)+'%';
+      const sign = cat.val >= 0 ? 'pos' : 'neg';
+      // Rough today value for this category
+      const todayVal = cat.name.includes('ISA') ? startISA : cat.name.includes('Pension') ? startPension : cat.name.includes('Rental') ? startRental : cat.name.includes('Other Inv') ? startOtherInv : cat.name.includes('Property / R') ? startProperty : cat.name.includes('Cash') ? startCash : cat.name.includes('Other Assets') ? startOtherAst : -todayDebt;
+      const change = cat.val - todayVal;
+      const changeSign = change >= 0 ? 'pos' : 'neg';
+      return `<tr>
+        <td><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${cat.color};margin-right:7px;vertical-align:middle"></span><strong>${cat.name}</strong></td>
+        <td class="mono ${sign}">${cur(Math.abs(cat.val))}</td>
+        <td class="mono" style="color:var(--text3)">${pctNW}</td>
+        <td class="mono ${changeSign}">${change>=0?'+':''}${cur(change)}</td>
+      </tr>`;
+    }).join('') +
+    `<tr style="border-top:2px solid var(--border2)">
+      <td><strong>📈 Net Worth</strong></td>
+      <td class="mono pos"><strong>${cur(row.netWorth)}</strong></td>
+      <td class="mono" style="color:var(--accent)">${((row.netWorth/Math.max(1,todayNW)-1)*100).toFixed(1)}% vs today</td>
+      <td class="mono ${row.netWorth>=todayNW?'pos':'neg'}">${row.netWorth>=todayNW?'+':''}${cur(row.netWorth-todayNW)}</td>
+    </tr>`;
+  }
+
+  // Doughnut of asset mix (positive only)
+  const posCats = cats.filter(cat => cat.val > 50);
+  destroyChart('chart-nw-donut');
+  if (posCats.length > 0 && document.getElementById('chart-nw-donut')) {
+    charts['chart-nw-donut'] = new Chart(document.getElementById('chart-nw-donut'), {
+      type: 'doughnut',
+      data: {
+        labels: posCats.map(cat => cat.name),
+        datasets: [{ data: posCats.map(cat => cat.val), backgroundColor: posCats.map(cat => cat.color), borderWidth: 0, hoverOffset: 4 }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: c.text, font: { size: 10 }, boxWidth: 10, padding: 7 } }, tooltip: { callbacks: { label: ctx => ' '+cur(ctx.raw) } } } }
+    });
+  }
+
+  // Metrics strip
+  const strip = document.getElementById('nw-metrics-strip');
+  if (strip) {
+    const fireTarget = row.fireTarget;
+    const pctOfFire  = fireTarget > 0 ? clamp(row.investPortfolio/fireTarget*100,0,200) : 0;
+    const annInc     = row.annualIncome;
+    const debtRatio  = row.totalAssets > 0 ? (row.totalDebt/row.totalAssets*100) : 0;
+    const metrics = [
+      { label: 'FIRE Progress',    val: pctOfFire.toFixed(1)+'%',         color: pctOfFire>=100?c.accent:c.amber },
+      { label: 'Portfolio',        val: cur(row.investPortfolio),          color: c.blue   },
+      { label: 'Annual Income',    val: cur(annInc),                       color: c.accent },
+      { label: 'Debt Ratio',       val: debtRatio.toFixed(1)+'% of assets',color: debtRatio>50?c.red:c.text3 },
+    ];
+    strip.innerHTML = metrics.map(m => `
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px">
+        <div style="font-size:9px;color:var(--text3);font-family:var(--font-m);text-transform:uppercase;letter-spacing:1.5px">${m.label}</div>
+        <div style="font-family:var(--font-d);font-size:16px;font-weight:700;color:${m.color};margin-top:3px">${m.val}</div>
+      </div>`).join('');
+  }
+}
+
+
 
 // Build per-year income breakdown detail needed for Sankey
 function getCFDataForAge(age) {
-  const p = state.profile;
+  const p   = state.profile;
   const row = projection.find(r => r.age === age) || projection[projection.length - 1];
   if (!row) return null;
 
-  // Rebuild income source detail for this age
+  // y = years elapsed since projection start — identical to the loop variable in buildProjection
+  const y = age - p.age;
+
+  // ── Income sources ──────────────────────────────────────────────────────────
+  // Use the EXACT same formula as buildProjection so per-source values sum to
+  // row.annualIncome without any scaling correction.
+  //
+  //   income[i] at age = monthly * 12 * (1 + growthRate) ^ max(0, age - fromAge)
+  //
+  // This matches line 1247 of buildProjection exactly.
   const incomeSources = [];
   let totalISA = 0, totalPension = 0, totalOther = 0;
 
   state.income.forEach(inc => {
-    const fa = inc.fromAge || 0;
+    const fa = inc.fromAge  || 0;
     const ua = inc.untilAge || 999;
     if (age >= fa && age < ua) {
-      const amt = inc.monthly * 12 * Math.pow(1 + ((inc.growthRate || p.incomeGrowth) / 100), Math.max(0, age - fa));
+      const growthYears = Math.max(0, age - fa);
+      const amt = inc.monthly * 12
+                * Math.pow(1 + ((inc.growthRate || p.incomeGrowth) / 100), growthYears);
       incomeSources.push({ name: inc.name, amount: amt, type: inc.type });
-      if (inc.type === 'ISA Drawdown') totalISA += amt;
-      else if (inc.type === 'Pension Drawdown' || inc.type === 'Pension') totalPension += amt;
-      else totalOther += amt;
+      if      (inc.type === 'ISA Drawdown')                                    totalISA     += amt;
+      else if (inc.type === 'Pension Drawdown' || inc.type === 'Pension')       totalPension += amt;
+      else                                                                       totalOther   += amt;
     }
   });
 
-  // Rental income
+  // Rental income — inflated by y years from projection start (matches buildProjection line 1258)
   state.investments.accounts.forEach(a => {
     if (a.isRental && a.monthlyRentalIncome > 0) {
-      const amt = a.monthlyRentalIncome * 12 * Math.pow(1 + p.inflation / 100, age - p.age);
+      const amt = a.monthlyRentalIncome * 12 * Math.pow(1 + p.inflation / 100, y);
       incomeSources.push({ name: a.name + ' (Rental)', amount: amt, type: 'Rental' });
       totalOther += amt;
     }
   });
 
-  // State pension
+  // State pension — flat, matches buildProjection line 1266
   if (age >= p.statePensionAge) {
     const sp = p.statePension * 12;
     incomeSources.push({ name: 'State Pension', amount: sp, type: 'State Benefits' });
     totalOther += sp;
   }
 
-  // Expenses breakdown
+  // ── Expenses ────────────────────────────────────────────────────────────────
+  // Same formula as buildProjection: inflated by y years from projection start.
   const expenseSources = [];
   state.expenses.forEach(exp => {
-    const fa = exp.fromAge || 0;
+    const fa = exp.fromAge  || 0;
     const ua = exp.untilAge || 99;
     if (age >= fa && age < ua) {
-      const base = exp.monthly * 12;
-      const inflated = base * Math.pow(1 + p.inflation / 100, age - p.age);
+      const inflated = exp.monthly * 12 * Math.pow(1 + p.inflation / 100, y);
       expenseSources.push({ name: exp.name, amount: inflated, type: exp.type });
     }
   });
 
-  // Tax
-  const pensionTF = totalPension * 0.25;
-  const pensionTx = totalPension * 0.75;
-  const bd = { isa: totalISA, pensionTaxFree: pensionTF, pensionTaxable: pensionTx, other: totalOther };
-  const annInc = totalISA + totalPension + totalOther;
-  const taxResult = calcTax(annInc, p.taxRegime, bd);
-  const incomeTax = taxResult.income;
-  const ni = taxResult.ni;
-  const totalTax = incomeTax + ni;
+  // ── Tax — use the projection row directly ───────────────────────────────────
+  // row.totalTax, row.annualIncome, row.annualExpenses are already correct.
+  // We only need the ISA/pension split for the Sankey tax column.
+  const pensionTF  = totalPension * 0.25;
+  const pensionTx  = totalPension * 0.75;
+  const bd         = { isa: totalISA, pensionTaxFree: pensionTF, pensionTaxable: pensionTx, other: totalOther };
+  const taxResult  = calcTax(row.annualIncome, p.taxRegime, bd);
 
-  const totalIncome = annInc;
-  const totalExpenses = expenseSources.reduce((s, e) => s + e.amount, 0);
-  const netSurplus = totalIncome - totalTax - totalExpenses;
-  const isDeficit = netSurplus < 0;
-  const debtPmt = row.debtPayment || 0;
+  // Use row totals as the authoritative figures for KPIs and Sankey scale
+  const totalIncome   = row.annualIncome;
+  const totalExpenses = row.annualExpenses;
+  const totalTax      = row.totalTax;
+  const netSurplus    = totalIncome - totalTax - totalExpenses;
+  const isDeficit     = netSurplus < 0;
 
   return {
     age, year: row.year, row,
     incomeSources, expenseSources,
     totalISA, totalPension, totalPensionTF: pensionTF, totalPensionTx: pensionTx, totalOther,
-    totalIncome, incomeTax, ni, totalTax, totalExpenses,
-    netSurplus, isDeficit, debtPmt,
+    totalIncome, incomeTax: taxResult.income, ni: taxResult.ni, totalTax, totalExpenses,
+    netSurplus, isDeficit, debtPmt: row.debtPayment || 0,
     retired: row.retired, fireReached: row.fireReached,
     investPortfolio: row.investPortfolio, netWorth: row.netWorth,
     liquidBalance: row.liquidBalance || 0
   };
+}
+
+function updateCashFlowKPIs() {
+  // Read from the projection row at current age — not raw state.income —
+  // so the initial KPI cards reflect growth-adjusted income correctly.
+  const p   = state.profile;
+  const row = projection.find(r => r.age === p.age) || projection[0];
+  if (!row) return;
+  const taxSub = document.getElementById('cf-tax-sub');
+  const eff    = row.annualIncome > 0 ? (row.totalTax / row.annualIncome * 100).toFixed(1) : '0.0';
+  document.getElementById('cf-income').textContent    = cur(row.annualIncome);
+  document.getElementById('cf-expenses').textContent  = cur(row.annualExpenses);
+  document.getElementById('cf-tax').textContent       = cur(row.totalTax);
+  document.getElementById('cf-surplus').textContent   = cur(row.annualIncome - row.totalTax - row.annualExpenses);
+  const incomeSub = document.getElementById('cf-income-sub');
+  if (incomeSub) incomeSub.textContent = `at age ${p.age} (current)`;
+  if (taxSub)    taxSub.textContent    = `effective ${eff}% rate`;
 }
 
 // Draw Sankey SVG for given CF data
@@ -1895,20 +2281,6 @@ function onCFSlider(idx) {
   }
 }
 
-function updateCashFlowKPIs() {
-  // Sync the timeline if cashflow view is active, else just update KPIs at current age
-  const p = state.profile;
-  const mInc = state.income.filter(i=>(i.fromAge||0)<=p.age&&p.age<(i.untilAge||999)).reduce((s,i)=>s+i.monthly,0);
-  const mExp = state.expenses.filter(e=>(e.fromAge||0)<=p.age&&p.age<(e.untilAge||99)).reduce((s,e)=>s+e.monthly,0);
-  const bd = buildIncomeBreakdown(mInc*12, p.age);
-  const tr = calcTax(mInc*12, p.taxRegime, bd);
-  const annTax = tr.income + tr.ni;
-  document.getElementById('cf-income').textContent   = cur(mInc*12);
-  document.getElementById('cf-expenses').textContent = cur(mExp*12);
-  document.getElementById('cf-tax').textContent      = cur(annTax);
-  document.getElementById('cf-surplus').textContent  = cur(mInc*12 - mExp*12 - annTax);
-}
-
 function drawCFLifetimeChart() {
   const c = getThemeColors();
   destroyChart('chart-cashflow-lifetime');
@@ -2000,19 +2372,12 @@ function updateCharts() {
       backgroundColor:[c.accent,c.teal,`${c.teal}99`,c.amber,c.red],borderWidth:0,hoverOffset:4}]
   },dOpts());
 
-  mk('chart-nw-full','line',{labels:ages,datasets:[
-    {label:'Net Worth',data:projection.map(r=>r.netWorth),borderColor:c.accent,backgroundColor:`${c.accent}10`,fill:true,tension:.4,pointRadius:0,borderWidth:2.5},
-    {label:'Investments',data:projection.map(r=>r.investPortfolio),borderColor:c.blue,fill:false,tension:.4,pointRadius:0,borderWidth:2},
-    {label:'Non-Investable',data:projection.map(r=>r.totalNonInv),borderColor:c.amber,borderDash:[4,3],fill:false,tension:.4,pointRadius:0,borderWidth:1.5},
-    {label:'FIRE Target',data:projection.map(r=>r.fireTarget),borderColor:c.red,borderDash:[6,4],fill:false,tension:0,pointRadius:0,borderWidth:1.5}
-  ]},cOpts());
-
-  mk('chart-asset-stack','line',{labels:ages,datasets:[
-    {label:'Investments',data:projection.map(r=>r.investPortfolio),borderColor:c.accent,backgroundColor:`${c.accent}30`,fill:true,tension:.4,pointRadius:0},
-    {label:'Non-Investable',data:projection.map(r=>r.totalNonInv),borderColor:c.blue,backgroundColor:`${c.blue}20`,fill:true,tension:.4,pointRadius:0}
-  ]},cOpts(true));
-
-  mk('chart-debt','line',{labels:ages,datasets:[{label:'Total Debt',data:projection.map(r=>r.totalDebt),borderColor:c.red,backgroundColor:`${c.red}10`,fill:true,tension:.3,pointRadius:0,borderWidth:2}]},cOpts());
+  // Net worth stacked timeline — rebuild if networth view is active
+  if (document.getElementById('view-networth')?.classList.contains('active')) {
+    buildNWStackedChart();
+  } else {
+    destroyChart('chart-nw-stacked');
+  }
 
   mk('chart-inc-exp','line',{labels:ages,datasets:[
     {label:'Net Income',data:projection.map(r=>r.netIncome),borderColor:c.accent,fill:false,tension:.4,pointRadius:0,borderWidth:2},
@@ -2788,6 +3153,31 @@ function updateAlloc(i,val){
 function updateBlendedDisplay(){document.getElementById('blended-return-display').textContent=(blendedReturn()*100).toFixed(2)+'%';}
 
 // =========================================================
+// FIRE TARGET: SWR ↔ Expense Multiple sync
+// =========================================================
+function syncFireMultiple(source) {
+  const swrEl = document.getElementById('p-swr');
+  const multEl = document.getElementById('p-fire-multiple');
+  const fmlaEl = document.getElementById('p-fire-formula');
+  if (!swrEl || !multEl) return;
+  if (source === 'swr') {
+    const swr = parseFloat(swrEl.value);
+    if (swr > 0) {
+      const m = +(100 / swr).toFixed(1);
+      multEl.value = m;
+      if (fmlaEl) fmlaEl.textContent = `annual expenses × ${m} = SWR ${swr}%`;
+    }
+  } else {
+    const m = parseFloat(multEl.value);
+    if (m > 0) {
+      const swr = +(100 / m).toFixed(2);
+      swrEl.value = swr;
+      if (fmlaEl) fmlaEl.textContent = `annual expenses × ${m} = SWR ${swr}%`;
+    }
+  }
+}
+
+// =========================================================
 // PROFILE
 // =========================================================
 function saveProfile(){
@@ -2803,8 +3193,11 @@ function saveProfile(){
   p.inflation=parseFloat(document.getElementById('p-inflation').value)||p.inflation;
   p.incomeGrowth=parseFloat(document.getElementById('p-income-growth').value)||p.incomeGrowth;
   p.swr=parseFloat(document.getElementById('p-swr').value)||p.swr;
+  p.fireMultiple=parseFloat(document.getElementById('p-fire-multiple')?.value)||(100/p.swr);
   p.volatility=parseFloat(document.getElementById('p-volatility').value)||p.volatility;
   p.assetGrowth=parseFloat(document.getElementById('p-asset-growth').value)||p.assetGrowth;
+  // Keep SWR and multiple in sync
+  p.swr = 100 / p.fireMultiple;
   recalculate();showView('dashboard');showToast('Profile saved & recalculated');
 }
 function populateProfileForm(){
@@ -2820,6 +3213,13 @@ function populateProfileForm(){
   document.getElementById('p-inflation').value=p.inflation;
   document.getElementById('p-income-growth').value=p.incomeGrowth;
   document.getElementById('p-swr').value=p.swr;
+  const multEl = document.getElementById('p-fire-multiple');
+  if (multEl) multEl.value = p.fireMultiple || +(100/p.swr).toFixed(1);
+  const fmlaEl = document.getElementById('p-fire-formula');
+  if (fmlaEl) {
+    const m = p.fireMultiple || +(100/p.swr).toFixed(1);
+    fmlaEl.textContent = `annual expenses × ${m} = SWR ${p.swr.toFixed(2)}%`;
+  }
   document.getElementById('p-volatility').value=p.volatility;
   document.getElementById('p-asset-growth').value=p.assetGrowth||3.5;
 }
@@ -2891,6 +3291,12 @@ function importJSON(event){
         },
         estateSettings:{...def.estateSettings,...(loaded.estateSettings||{})}
       };
+      // Migrate fireMultiple — if old plan only had SWR, derive multiple
+      if (!state.profile.fireMultiple) {
+        state.profile.fireMultiple = +(100 / state.profile.swr).toFixed(2);
+      }
+      // Keep SWR in sync with multiple
+      state.profile.swr = 100 / state.profile.fireMultiple;
       // Migrate old allocation field
       state.investments.allocation=state.investments.allocation.map(a=>({...a,annualReturn:a.annualReturn||a.return||7}));
       // Migrate old income/expense without fromAge/untilAge
@@ -2954,19 +3360,24 @@ function showView(id){
   }
   if(id==='profile')populateProfileForm();
   if(id==='networth'){
-    // Re-render liquid runway and debt payoff table in case projection changed
     setTimeout(()=>{
+      buildNWStackedChart();
+      buildNWSlider();
+      // Also rebuild liquid runway and debt payoff if needed
       const c=getThemeColors();
-      destroyChart('chart-liquid-runway');
       const ages=projection.map(r=>r.age);
-      const liquidData=projection.map(r=>r.liquidBalance||0);
-      const runoutAge=projection[0]?.liquidRunoutAge;
+      destroyChart('chart-liquid-runway');
       charts['chart-liquid-runway']=new Chart(document.getElementById('chart-liquid-runway'),{type:'line',
         data:{labels:ages,datasets:[
-          {label:'Liquid Balance (ISA/GIA/Cash)',data:liquidData,borderColor:c.teal,backgroundColor:`${c.teal}18`,fill:true,tension:.4,pointRadius:0,borderWidth:2.5},
+          {label:'Liquid Balance (ISA/GIA/Cash)',data:projection.map(r=>r.liquidBalance||0),borderColor:c.teal,backgroundColor:`${c.teal}18`,fill:true,tension:.4,pointRadius:0,borderWidth:2.5},
           {label:'Zero line',data:ages.map(()=>0),borderColor:`${c.red}60`,borderDash:[3,3],fill:false,pointRadius:0,borderWidth:1}
         ]},options:cOpts()});
-      // Debt payoff table
+      const liqInfoEl=document.getElementById('liquid-runout-info');
+      const runoutAge=projection[0]?.liquidRunoutAge;
+      if(liqInfoEl){
+        if(runoutAge){liqInfoEl.innerHTML=`<div class="alert warning">⚠ <strong>Liquid accounts projected to run out at age ${runoutAge}.</strong> After this, drawdown must come from pensions or property.</div>`;}
+        else{const liq=state.investments.accounts.filter(a=>a.type==='ISA'||a.type==='GIA'||a.type==='Cash').reduce((s,a)=>s+a.balance,0);liqInfoEl.innerHTML=liq>0?`<div class="alert success">✓ Liquid accounts remain solvent throughout the model. Current: <strong>${cur(liq)}</strong>.</div>`:`<div class="alert info">ℹ No liquid accounts (ISA, GIA, Cash) entered.</div>`;}
+      }
       const dpTbody=document.getElementById('debt-payoff-tbody');
       if(dpTbody){
         const payoffInfo=getDebtPayoffInfo();
@@ -2975,12 +3386,6 @@ function showView(id){
           const yearsLeft=d.payoffYear?Math.max(0,d.payoffYear-currentYear):'—';
           return`<tr><td><strong>${d.name}</strong></td><td class="mono neg">£${d.balance.toLocaleString()}</td><td class="mono">${d.interestRate}%</td><td class="mono">£${d.monthlyPayment.toLocaleString()}/mo</td><td class="mono ${d.payoffYear&&d.payoffYear-currentYear<=5?'pos':''}">${d.payoffYear||'Never'}</td><td class="mono">${d.payoffAge?'Age '+d.payoffAge:'—'}</td><td class="mono">${yearsLeft} yrs</td></tr>`;
         }).join('')||'<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:20px">No debts entered</td></tr>';
-      }
-      // Liquid runout info text
-      const liqInfoEl=document.getElementById('liquid-runout-info');
-      if(liqInfoEl){
-        if(runoutAge){liqInfoEl.innerHTML=`<div class="alert warning">⚠ <strong>Liquid accounts (ISA, GIA, Cash) projected to run out at age ${runoutAge}.</strong> After this, drawdown must come from pensions or property. Consider sequencing withdrawals to preserve liquid assets longer.</div>`;}
-        else{const liquidNow=state.investments.accounts.filter(a=>a.type==='ISA'||a.type==='GIA'||a.type==='Cash').reduce((s,a)=>s+a.balance,0);liqInfoEl.innerHTML=liquidNow>0?`<div class="alert success">✓ Liquid accounts remain solvent throughout the model. Current liquid balance: <strong>${cur(liquidNow)}</strong>.</div>`:`<div class="alert info">ℹ No liquid accounts (ISA, GIA, Cash) entered. Add accounts of these types to track your liquidity runway.</div>`;}
       }
     },60);
   }
