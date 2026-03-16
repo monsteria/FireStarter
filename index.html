@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -384,7 +384,7 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15)}
         </div>
         <div class="panel-body" style="padding:0;overflow-x:auto">
           <table class="data-table" id="nw-detail-table">
-            <thead><tr><th>Category</th><th>Value</th><th>% of Net Worth</th><th>Change vs Today</th></tr></thead>
+            <thead><tr><th>Category</th><th>Value</th><th>% of Net Worth</th><th>Change vs Start</th></tr></thead>
             <tbody id="nw-detail-tbody"></tbody>
           </table>
         </div>
@@ -458,6 +458,17 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15)}
             </div>
             <div style="font-size:11px;color:var(--text3);font-family:var(--font-m);padding-top:6px;border-top:1px solid var(--border)">
               FIRE target = <span id="p-fire-formula" style="color:var(--accent)">annual expenses × 25 = SWR 4%</span>
+            </div>
+          </div>
+          <!-- Liquid runway account types -->
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:14px">
+            <div style="font-size:10px;color:var(--teal);font-family:var(--font-m);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;font-weight:600">💧 Liquid Cash Runway — Account Types</div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:10px">Choose which account types count as liquid for the runway calculation:</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px" id="liquid-types-toggles">
+              <!-- populated by JS -->
+            </div>
+            <div style="font-size:10px;color:var(--text3);font-family:var(--font-m);margin-top:8px">
+              Covers matching account types in <strong>Investments</strong> and, for <strong>Cash</strong>, also entries of type Cash in the <strong>Assets &amp; Debts</strong> tab (e.g. Emergency Fund).
             </div>
           </div>
           <button class="btn primary" style="width:100%;padding:10px;margin-top:4px" onclick="saveProfile()">✓ Save &amp; Recalculate</button>
@@ -1332,6 +1343,10 @@ function applyLoadedState(loaded) {
   // Migrations
   if (!state.profile.fireMultiple) state.profile.fireMultiple = +(100/state.profile.swr).toFixed(2);
   state.profile.swr = 100 / state.profile.fireMultiple;
+  // Migrate: add liquidAccountTypes if missing from older plans
+  if (!state.profile.liquidAccountTypes) {
+    state.profile.liquidAccountTypes = ['ISA','GIA','Cash'];
+  }
   state.investments.allocation = state.investments.allocation.map(a => ({...a, annualReturn: a.annualReturn || a.return || 7}));
   state.income    = state.income.map(i    => ({ fromAge:0, untilAge:999, ...i }));
   state.expenses  = state.expenses.map(e  => ({ untilAge:99, ...e }));
@@ -1477,11 +1492,11 @@ const INFO_DEFS = {
     assumptions: 'Income amounts are in today\'s money and inflated at the income growth rate. Drawdown income from portfolios reduces investable assets — model this by adding a corresponding investment account withdrawal.'
   },
   liquidRunout: {
-    title: 'Liquid Asset Runway',
-    what: 'Tracks when your easily-accessible accounts (ISA, GIA, Cash/Money Market) are projected to run out under your drawdown plan.',
-    interpret: 'If liquid assets run out before you can access pensions (minimum access age 57 from 2028 in UK), you face a gap where you may need to sell illiquid assets. Aim for at least 2 years of expenses in liquid accounts. A "Never runs out" result means liquid assets are sustained throughout.',
-    calc: 'Liquid balance = sum of ISA + GIA + Cash account balances projected each year. Runout = first projected year the balance drops to £0 or below.',
-    assumptions: 'Drawdown assumed proportional across all accounts. Optimal sequencing (ISA first, then GIA, then pension) can extend tax-efficient runway significantly compared to this model.'
+    title: 'Liquid Cash Runway',
+    what: 'How many months of expenses your accessible accounts (ISA, GIA, Cash/Money Market) can cover at your current spending rate — and when they are projected to run out if you are drawing down.',
+    interpret: 'Months of runway is the most actionable measure: divide total liquid balance by your monthly expenses. A common rule of thumb is to hold at least 12–24 months in liquid accounts as an emergency and sequencing buffer. In early retirement, 3–5 years of liquid runway is recommended to protect against sequence-of-returns risk — avoiding forced portfolio sales during a market downturn. "Never runs out" means liquid accounts are projected to remain positive throughout the model.',
+    calc: 'Monthly expenses = total annual expenses from the Expenses tab ÷ 12. Months of runway = current liquid balance ÷ monthly expenses. Liquid balance = sum of all ISA + GIA + Cash account balances. Runout age = first projected year when the balance reaches £0 under the current drawdown plan.',
+    assumptions: 'Drawdown is assumed proportional across all investment accounts. Optimal sequencing (ISA first to preserve tax-free compounding, GIA second, pension last) would extend liquid runway vs this model. Income-mode returns from liquid accounts are included in the liquid balance each year.'
   },
   taxBreakdown: {
     title: 'Income Tax by Source',
@@ -1545,7 +1560,8 @@ function getDefaultState() {
       age: 32, retireAge: 55, lifeExp: 90, taxRegime: 'uk', currency: '£',
       returnRate: 7, inflation: 2.5, incomeGrowth: 3, swr: 4, volatility: 12,
       statePensionAge: 67, statePension: 800, assetGrowth: 3.5,
-      fireMultiple: 25   // FIRE target = annual expenses × fireMultiple (= 1/SWR)
+      fireMultiple: 25,
+      liquidAccountTypes: ['ISA','GIA','Cash']   // account types that count as liquid
     },
     // CHANGE 1: income now has fromAge field; type includes drawdown options
     income: [
@@ -1791,6 +1807,32 @@ function blendedReturn() {
 }
 
 // Change 1: Per-account effective return rate
+// Helpers for liquid balance — cover both state.investments.accounts AND state.assets
+
+// Is this investment account counted as liquid?
+function isLiquidAccount(acct) {
+  const types = state.profile.liquidAccountTypes || ['ISA','GIA','Cash'];
+  return types.includes(acct.type);
+}
+
+// Is this non-investable asset (from Assets & Debts tab) counted as liquid?
+// Mapping: 'Cash' toggle → state.assets type='Cash'; future: 'Property' → type='Property'
+function isLiquidAsset(asset) {
+  const types = state.profile.liquidAccountTypes || ['ISA','GIA','Cash'];
+  // Only Cash-type assets are considered liquid — property and physical assets are illiquid
+  return types.includes('Cash') && asset.type === 'Cash';
+}
+
+// Total current liquid balance: investment accounts + liquid non-investable assets
+function getLiquidNow() {
+  const fromAccounts = state.investments.accounts
+    .filter(a => isLiquidAccount(a))
+    .reduce((s, a) => s + a.balance, 0);
+  const fromAssets = state.assets
+    .filter(a => isLiquidAsset(a))
+    .reduce((s, a) => s + a.value, 0);
+  return fromAccounts + fromAssets;
+}
 // Rental properties use customReturnRate (total return = price appreciation + yield)
 // Other accounts: use customReturnRate if set, else blended allocation return
 function accountReturnRate(acct) {
@@ -1882,7 +1924,7 @@ function buildProjection(ov={}) {
   // Change 5: Track cash-type accounts separately for liquidity runout
   // Cash accounts = ISA (liquid) + Cash/Money Market type
   let liquidCashBalance = state.investments.accounts
-    .filter(a => a.type === 'ISA' || a.type === 'GIA' || a.type === 'Cash')
+    .filter(a => isLiquidAccount(a))
     .reduce((s, a) => s + a.balance, 0);
 
   let nonInvAssets    = state.assets.map(a => ({...a}));
@@ -2095,13 +2137,19 @@ function buildProjection(ov={}) {
       }
     }
 
-    // step 9: liquid balance includes income-mode investment returns received this year
-    // (they are cash in hand, not locked in the portfolio)
+    // step 9: liquid balance — investment accounts + liquid non-investable assets
+    // (e.g. Cash savings in Assets & Debts tab) grown at their own rate
     let liquidBalance = 0;
     accountBalances.forEach((bal, ai) => {
       const acct = state.investments.accounts[ai];
-      if (acct.type === 'ISA' || acct.type === 'GIA' || acct.type === 'Cash') {
+      if (isLiquidAccount(acct)) {
         liquidBalance += bal;
+      }
+    });
+    // Add liquid non-investable assets (tracked in nonInvAssets, grown each year)
+    nonInvAssets.forEach(a => {
+      if (isLiquidAsset(a)) {
+        liquidBalance += a.value;
       }
     });
     // Income-mode returns from liquid-type accounts flow into liquid balance
@@ -2110,7 +2158,7 @@ function buildProjection(ov={}) {
       const ua2 = acct.incomeToAge   != null ? acct.incomeToAge   : null;
       const inW = (fa2 === null || age >= fa2) && (ua2 === null || age < ua2);
       if (acct.incomeMode === 'income' && inW) {
-        if (acct.type === 'ISA' || acct.type === 'GIA') {
+        if (isLiquidAccount(acct)) {
           liquidBalance += Math.max(0, accountBalances[ai] * accountReturnRate(acct));
         }
       }
@@ -2205,22 +2253,34 @@ function updateKPIs() {
   const at65 = projection.find(r=>r.age===65);
   document.getElementById('nw-at65').textContent = at65?cur(at65.netWorth):'—';
 
-  // Change 5: Liquid cash runout KPI
+  // Liquid cash runway KPI — show months of runway as headline
   const runoutAge = projection.length > 0 ? projection[0].liquidRunoutAge : null;
   const runoutKpi = document.getElementById('kpi-liquid-runout');
   const runoutVal = document.getElementById('kpi-runout-val');
   const runoutSub = document.getElementById('kpi-runout-sub');
+  const liquidTypes = (state.profile.liquidAccountTypes || ['ISA','GIA','Cash']).join(' + ');
   if (runoutVal && runoutSub) {
-    if (runoutAge) {
-      runoutVal.textContent = 'Age ' + runoutAge;
-      runoutSub.textContent = 'Liquid accounts exhausted';
-      if (runoutKpi) runoutKpi.style.setProperty('--kpi-border-color', 'var(--red)');
-    } else {
-      const liquidNow = state.investments.accounts
-        .filter(a => a.type === 'ISA' || a.type === 'GIA' || a.type === 'Cash')
-        .reduce((s,a) => s+a.balance, 0);
-      runoutVal.textContent = liquidNow > 0 ? cur(liquidNow) : '—';
-      runoutSub.textContent = liquidNow > 0 ? 'Never runs out in model' : 'No liquid accounts';
+    const liquidNow    = getLiquidNow();
+    const monthlyExp   = state.expenses
+      .filter(e => (e.fromAge||0) <= p.age && p.age < (e.untilAge||99))
+      .reduce((s,e) => s+e.monthly, 0);
+    const runwayMonths = monthlyExp > 0 ? Math.floor(liquidNow / monthlyExp) : null;
+    const runwayYears  = runwayMonths != null ? (runwayMonths / 12).toFixed(1) : null;
+
+    if (liquidNow <= 0) {
+      runoutVal.textContent = '—';
+      runoutSub.textContent = `${liquidTypes} — none entered`;
+      if (runoutKpi) { runoutKpi.className = 'kpi'; runoutKpi.style.borderTopColor = 'var(--text3)'; }
+    } else if (runoutAge) {
+      const yearsToRunout  = runoutAge - p.age;
+      const monthsToRunout = yearsToRunout * 12;
+      runoutVal.textContent = monthsToRunout + ' mo';
+      runoutSub.textContent = `${cur(liquidNow)} · runs out age ${runoutAge} (${yearsToRunout} yrs)`;
+      if (runoutKpi) { runoutKpi.className = 'kpi red'; runoutKpi.style.borderTopColor = ''; }
+    } else if (runwayMonths != null) {
+      runoutVal.textContent = runwayMonths >= 9999 ? '∞' : runwayMonths + ' mo';
+      runoutSub.textContent = `${cur(liquidNow)} · ${runwayYears} yrs · never runs out`;
+      if (runoutKpi) { runoutKpi.className = 'kpi teal'; runoutKpi.style.borderTopColor = ''; }
     }
   }
 }
@@ -2448,22 +2508,40 @@ function onNWSlider(idx) {
     { name: '🔴 Total Debt',             val: -row.totalDebt,                                                color: c.red    }
   ].filter(cat => Math.abs(cat.val) > 50);
 
-  // Today's values for change comparison
-  const todayInvest = state.investments.accounts.reduce((s,a)=>s+a.balance,0);
-  const todayNonInv = state.assets.reduce((s,a)=>s+a.value,0);
-  const todayDebt   = state.debts.reduce((s,d)=>s+d.balance,0);
-  const todayNW     = todayInvest + todayNonInv - todayDebt;
+  // Per-category starting values — raw state balances (what the KPI cards show as "today")
+  // Using state balances (not projection row 0) so the detail table is consistent
+  // with the static KPI cards on this view.
+  const todayISA      = startISA;
+  const todayPension  = startPension;
+  const todayRental   = startRental;
+  const todayOtherInv = startOtherInv;
+  const todayProperty = startProperty;
+  const todayCash     = startCash;
+  const todayOtherAst = startOtherAst;
+  const todayDebtVal  = state.debts.reduce((s,d)=>s+d.balance,0);
+  const todayNW       = totalInvStart + totalNonStart - todayDebtVal;
+
+  const todayCatVal = (cat) => {
+    if (cat.name.includes('Debt'))        return -todayDebtVal;
+    if (cat.name.includes('ISA'))         return todayISA;
+    if (cat.name.includes('Pension'))     return todayPension;
+    if (cat.name.includes('Rental'))      return todayRental;
+    if (cat.name.includes('Other Inv'))   return todayOtherInv;
+    if (cat.name.includes('Property / R'))return todayProperty;
+    if (cat.name.includes('Cash'))        return todayCash;
+    if (cat.name.includes('Other Asset')) return todayOtherAst;
+    return 0;
+  };
 
   // Detail table
   const tbody = document.getElementById('nw-detail-tbody');
   if (tbody) {
     const nw = row.netWorth || 1;
     tbody.innerHTML = cats.map(cat => {
-      const pctNW = cat.name.includes('Debt') ? '' : (cat.val/nw*100).toFixed(1)+'%';
-      const sign = cat.val >= 0 ? 'pos' : 'neg';
-      // Rough today value for this category
-      const todayVal = cat.name.includes('ISA') ? startISA : cat.name.includes('Pension') ? startPension : cat.name.includes('Rental') ? startRental : cat.name.includes('Other Inv') ? startOtherInv : cat.name.includes('Property / R') ? startProperty : cat.name.includes('Cash') ? startCash : cat.name.includes('Other Assets') ? startOtherAst : -todayDebt;
-      const change = cat.val - todayVal;
+      const pctNW      = cat.name.includes('Debt') ? '' : (cat.val/nw*100).toFixed(1)+'%';
+      const sign       = cat.val >= 0 ? 'pos' : 'neg';
+      const todayVal   = todayCatVal(cat);
+      const change     = cat.val - todayVal;
       const changeSign = change >= 0 ? 'pos' : 'neg';
       return `<tr>
         <td><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${cat.color};margin-right:7px;vertical-align:middle"></span><strong>${cat.name}</strong></td>
@@ -2475,7 +2553,7 @@ function onNWSlider(idx) {
     `<tr style="border-top:2px solid var(--border2)">
       <td><strong>📈 Net Worth</strong></td>
       <td class="mono pos"><strong>${cur(row.netWorth)}</strong></td>
-      <td class="mono" style="color:var(--accent)">${((row.netWorth/Math.max(1,todayNW)-1)*100).toFixed(1)}% vs today</td>
+      <td class="mono" style="color:var(--accent)">${((row.netWorth/Math.max(1,todayNW)-1)*100).toFixed(1)}% vs start</td>
       <td class="mono ${row.netWorth>=todayNW?'pos':'neg'}">${row.netWorth>=todayNW?'+':''}${cur(row.netWorth-todayNW)}</td>
     </tr>`;
   }
@@ -3234,41 +3312,8 @@ function updateCharts() {
 
   mk('chart-invest-growth','line',{labels:ages,datasets:[{label:'Portfolio',data:projection.map(r=>r.investPortfolio),borderColor:c.accent,backgroundColor:`${c.accent}12`,fill:true,tension:.4,pointRadius:0,borderWidth:2.5}]},cOpts());
 
-  // Change 5: Liquid cash runway chart
-  destroyChart('chart-liquid-runway');
-  const liquidData = projection.map(r => r.liquidBalance);
-  const runoutAge  = projection[0]?.liquidRunoutAge;
-  const runoutIdx  = runoutAge ? projection.findIndex(r => r.age === runoutAge) : -1;
-  const liqColors  = liquidData.map((v, i) => v <= 0 ? `${c.red}cc` : (runoutIdx > 0 && i >= runoutIdx - 1 ? `${c.amber}cc` : `${c.teal}cc`));
-  charts['chart-liquid-runway'] = new Chart(document.getElementById('chart-liquid-runway'), {
-    type: 'line',
-    data: { labels: ages, datasets: [
-      { label: 'Liquid Balance (ISA/GIA/Cash)', data: liquidData, borderColor: c.teal, backgroundColor: `${c.teal}18`, fill: true, tension: 0.4, pointRadius: 0, borderWidth: 2.5 },
-      { label: 'Zero line', data: ages.map(() => 0), borderColor: `${c.red}60`, borderDash: [3,3], fill: false, pointRadius: 0, borderWidth: 1 }
-    ]},
-    options: {
-      ...cOpts(),
-      plugins: { ...cOpts().plugins,
-        annotation: undefined,
-        tooltip: { ...cOpts().plugins.tooltip,
-          callbacks: { afterBody: ctx => runoutAge && ctx[0]?.label >= runoutAge ? ['⚠ Liquid accounts exhausted'] : [] }
-        }
-      }
-    }
-  });
-
-  // Populate liquid runout info text
-  const liqInfoEl = document.getElementById('liquid-runout-info');
-  if (liqInfoEl) {
-    if (runoutAge) {
-      liqInfoEl.innerHTML = `<div class="alert warning">⚠ <strong>Liquid accounts (ISA, GIA, Cash) projected to run out at age ${runoutAge}.</strong> After this point, you would need to draw from less-liquid assets (pensions, property) or reduce spending. Consider maintaining a larger emergency buffer or sequencing drawdown to avoid depleting liquid funds early.</div>`;
-    } else {
-      const liquidNow = state.investments.accounts.filter(a=>a.type==='ISA'||a.type==='GIA'||a.type==='Cash').reduce((s,a)=>s+a.balance,0);
-      liqInfoEl.innerHTML = liquidNow > 0
-        ? `<div class="alert success">✓ Liquid accounts are projected to remain solvent throughout the model period. Current liquid balance: <strong>${cur(liquidNow)}</strong>.</div>`
-        : `<div class="alert info">ℹ No liquid accounts (ISA, GIA, Cash) currently entered. Add accounts of these types to track liquidity runway.</div>`;
-    }
-  }
+  // Liquid cash runway chart — delegated to shared function
+  buildLiquidRunwayChart();
 
   // Change 2: Debt payoff table
   const dpTbody = document.getElementById('debt-payoff-tbody');
@@ -3312,6 +3357,122 @@ function updateCharts() {
   if(document.getElementById('view-montecarlo').classList.contains('active')) runMonteCarlo();
   updateScenarios();
   updateEstate();
+}
+
+// =========================================================
+// LIQUID RUNWAY CHART — shared, called from updateCharts + showView('networth')
+// =========================================================
+function buildLiquidRunwayChart() {
+  if (!projection.length) return;
+  const p        = state.profile;
+  const c        = getThemeColors();
+  const ages     = projection.map(r => r.age);
+  const runoutAge = projection[0]?.liquidRunoutAge;
+
+  destroyChart('chart-liquid-runway');
+
+  // Convert liquid balance → months of expenses covered each year
+  const monthlyRunway = projection.map(r => {
+    if (r.annualExpenses <= 0) return null;
+    return Math.max(0, Math.round((r.liquidBalance / (r.annualExpenses / 12)) * 10) / 10);
+  });
+
+  charts['chart-liquid-runway'] = new Chart(document.getElementById('chart-liquid-runway'), {
+    type: 'line',
+    data: { labels: ages, datasets: [
+      {
+        label: 'Runway (months of expenses)',
+        data: monthlyRunway,
+        borderColor: c.teal,
+        backgroundColor: `${c.teal}20`,
+        fill: true, tension: 0.4, pointRadius: 0, borderWidth: 2.5,
+        yAxisID: 'y'
+      },
+      {
+        label: '24-month buffer (recommended)',
+        data: ages.map(() => 24),
+        borderColor: `${c.amber}90`,
+        borderDash: [5, 4], fill: false, pointRadius: 0, borderWidth: 1.5,
+        yAxisID: 'y'
+      },
+      {
+        label: '12-month minimum',
+        data: ages.map(() => 12),
+        borderColor: `${c.red}70`,
+        borderDash: [3, 3], fill: false, pointRadius: 0, borderWidth: 1,
+        yAxisID: 'y'
+      }
+    ]},
+    options: {
+      ...cOpts(),
+      scales: {
+        x: { grid: { color: c.grid }, ticks: { color: c.text3, font: { size: 10 } } },
+        y: {
+          grid: { color: c.grid },
+          ticks: { color: c.text3, font: { size: 10 }, callback: v => v + ' mo' },
+          title: { display: true, text: 'Months of Expenses Covered', color: c.text3, font: { size: 10 } }
+        }
+      },
+      plugins: {
+        ...cOpts().plugins,
+        tooltip: {
+          ...cOpts().plugins.tooltip,
+          callbacks: {
+            label: ctx => {
+              const months = ctx.raw;
+              if (months === null || months === undefined) return '';
+              return ` ${Math.round(months)} months (${(months/12).toFixed(1)} yrs) of expenses`;
+            },
+            afterBody: ctx => {
+              const row = projection[ctx[0]?.dataIndex];
+              if (!row) return [];
+              const lines = [`Balance: ${cur(row.liquidBalance)}`];
+              if (runoutAge && row.age >= runoutAge) lines.push('⚠ Liquid accounts exhausted');
+              return lines;
+            }
+          }
+        }
+      }
+    }
+  });
+
+  // Info text panel
+  const liqInfoEl = document.getElementById('liquid-runout-info');
+  if (!liqInfoEl) return;
+
+  const liquidNow  = getLiquidNow();
+  const monthlyExp = state.expenses
+    .filter(e => (e.fromAge||0) <= p.age && p.age < (e.untilAge||99))
+    .reduce((s, e) => s + e.monthly, 0);
+  const nowMonths  = monthlyExp > 0 ? Math.floor(liquidNow / monthlyExp) : null;
+  const nowYears   = nowMonths != null ? (nowMonths / 12).toFixed(1) : null;
+
+  if (runoutAge) {
+    const yearsLeft   = runoutAge - p.age;
+    const monthsLeft  = yearsLeft * 12;
+    liqInfoEl.innerHTML = `
+      <div class="alert warning">
+        ⚠ <strong>Liquid accounts projected to run out at age ${runoutAge}
+        — ${yearsLeft} years (${monthsLeft} months) away.</strong>
+        ${nowMonths != null ? `Current runway: <strong>${nowMonths} months (${nowYears} yrs)</strong>
+        at current spending of ${cur(monthlyExp)}/mo (balance: ${cur(liquidNow)}).` : ''}
+        After this point you would need to draw from pensions or property, or reduce spending.
+        Dashed lines show the recommended 24-month and 12-month minimum buffers.
+      </div>`;
+  } else if (liquidNow > 0) {
+    const under12 = nowMonths != null && nowMonths < 12;
+    const under24 = nowMonths != null && nowMonths >= 12 && nowMonths < 24;
+    liqInfoEl.innerHTML = `
+      <div class="alert success">
+        ✓ Liquid accounts projected to remain solvent throughout the model.
+        Current runway: <strong>${nowMonths != null ? nowMonths + ' months (' + nowYears + ' yrs)' : cur(liquidNow)}</strong>
+        ${nowMonths != null ? `at ${cur(monthlyExp)}/mo spending.` : ''}
+      </div>
+      ${under12 ? `<div class="alert warning" style="margin-top:8px">⚠ Current runway of ${nowMonths} months is below the recommended 12-month minimum buffer. Consider adding to liquid accounts.</div>` : ''}
+      ${under24 ? `<div class="alert info" style="margin-top:8px">ℹ Current runway of ${nowMonths} months is below the 24-month buffer recommended for early retirement sequencing risk.</div>` : ''}`;
+  } else {
+    liqInfoEl.innerHTML = `<div class="alert info">ℹ No liquid accounts (ISA, GIA, Cash) entered. Add accounts of these types to track your liquidity runway.</div>`;
+  }
 }
 
 // =========================================================
@@ -4413,6 +4574,52 @@ function syncFireMultiple(source) {
 // =========================================================
 // PROFILE
 // =========================================================
+// =========================================================
+// LIQUID ACCOUNT TYPES TOGGLE
+// =========================================================
+const LIQUID_TYPE_OPTIONS = ['ISA','GIA','Cash','Pension','SIPP','401k','IRA','Other'];
+
+function renderLiquidTypeToggles() {
+  const container = document.getElementById('liquid-types-toggles');
+  if (!container) return;
+  const selected = state.profile.liquidAccountTypes || ['ISA','GIA','Cash'];
+  container.innerHTML = LIQUID_TYPE_OPTIONS.map(type => {
+    const active = selected.includes(type);
+    return `<button type="button"
+      class="btn ${active ? 'primary' : ''}"
+      style="padding:4px 12px;font-size:11px;font-family:var(--font-m);border-radius:20px;${active?'':'opacity:0.55'}"
+      onclick="toggleLiquidType('${type}')"
+      id="liqtype-${type}">${type}</button>`;
+  }).join('');
+  updateLiquidKpiSub();
+}
+
+function toggleLiquidType(type) {
+  const types = [...(state.profile.liquidAccountTypes || ['ISA','GIA','Cash'])];
+  const idx = types.indexOf(type);
+  if (idx >= 0) {
+    if (types.length === 1) { showToast('At least one type must remain liquid', false); return; }
+    types.splice(idx, 1);
+  } else {
+    types.push(type);
+  }
+  state.profile.liquidAccountTypes = types;
+  renderLiquidTypeToggles();
+}
+
+function updateLiquidKpiSub() {
+  const sub = document.getElementById('kpi-runout-sub');
+  const types = state.profile.liquidAccountTypes || ['ISA','GIA','Cash'];
+  const label = types.join(' + ') + ' accounts';
+  // Only update the sub if it currently shows the type list (not a status message)
+  if (sub && (sub.textContent.includes('accounts') || sub.textContent.includes('ISA'))) {
+    sub.textContent = label;
+  }
+  // Also update the static sub hint on the KPI
+  const staticSub = document.querySelector('#kpi-liquid-runout .kpi-sub');
+  // leave dynamic — updated by updateKPIs
+}
+
 function saveProfile(){
   const p=state.profile;
   p.age=parseInt(document.getElementById('p-age').value)||p.age;
@@ -4431,6 +4638,7 @@ function saveProfile(){
   p.assetGrowth=parseFloat(document.getElementById('p-asset-growth').value)||p.assetGrowth;
   // Keep SWR and multiple in sync
   p.swr = 100 / p.fireMultiple;
+  // liquidAccountTypes already updated live via toggleLiquidType()
   recalculate();showView('dashboard');showToast('Profile saved & recalculated');
 }
 function populateProfileForm(){
@@ -4455,6 +4663,7 @@ function populateProfileForm(){
   }
   document.getElementById('p-volatility').value=p.volatility;
   document.getElementById('p-asset-growth').value=p.assetGrowth||3.5;
+  renderLiquidTypeToggles();
 }
 function populateEstateForm(){
   const es=state.estateSettings;
@@ -5030,20 +5239,7 @@ function showView(id){
       buildNWStackedChart();
       buildNWSlider();
       // Also rebuild liquid runway and debt payoff if needed
-      const c=getThemeColors();
-      const ages=projection.map(r=>r.age);
-      destroyChart('chart-liquid-runway');
-      charts['chart-liquid-runway']=new Chart(document.getElementById('chart-liquid-runway'),{type:'line',
-        data:{labels:ages,datasets:[
-          {label:'Liquid Balance (ISA/GIA/Cash)',data:projection.map(r=>r.liquidBalance||0),borderColor:c.teal,backgroundColor:`${c.teal}18`,fill:true,tension:.4,pointRadius:0,borderWidth:2.5},
-          {label:'Zero line',data:ages.map(()=>0),borderColor:`${c.red}60`,borderDash:[3,3],fill:false,pointRadius:0,borderWidth:1}
-        ]},options:cOpts()});
-      const liqInfoEl=document.getElementById('liquid-runout-info');
-      const runoutAge=projection[0]?.liquidRunoutAge;
-      if(liqInfoEl){
-        if(runoutAge){liqInfoEl.innerHTML=`<div class="alert warning">⚠ <strong>Liquid accounts projected to run out at age ${runoutAge}.</strong> After this, drawdown must come from pensions or property.</div>`;}
-        else{const liq=state.investments.accounts.filter(a=>a.type==='ISA'||a.type==='GIA'||a.type==='Cash').reduce((s,a)=>s+a.balance,0);liqInfoEl.innerHTML=liq>0?`<div class="alert success">✓ Liquid accounts remain solvent throughout the model. Current: <strong>${cur(liq)}</strong>.</div>`:`<div class="alert info">ℹ No liquid accounts (ISA, GIA, Cash) entered.</div>`;}
-      }
+      buildLiquidRunwayChart();
       const dpTbody=document.getElementById('debt-payoff-tbody');
       if(dpTbody){
         const payoffInfo=getDebtPayoffInfo();
