@@ -7,6 +7,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=JetBrains+Mono:wght@300;400;500&family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  
 [data-theme="dark"]{
   --bg:#080d0a;--bg2:#0e1612;--bg3:#121d15;--surface:#172218;--surface2:#1e2e21;
   --glass:rgba(23,34,24,0.9);--border:rgba(74,222,128,0.12);--border2:rgba(74,222,128,0.28);
@@ -244,6 +245,33 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15)}
 .editable-tax-row input:focus{background:var(--input-bg);border-radius:4px;padding:2px 4px}
 @media(max-width:1050px){.grid-4{grid-template-columns:1fr 1fr}.grid-3{grid-template-columns:1fr 1fr}}
 @media(max-width:700px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}.sidebar{width:200px;min-width:200px}}
+
+  /* Glassmorphism+ Enhancement */
+.panel {
+  backdrop-filter: blur(16px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Enhanced Milestone Progress Bars */
+.progress-bar {
+  height: 6px;
+  background: var(--bg3);
+  margin-top: 12px;
+  border-radius: 10px;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.kpi:hover {
+  transform: translateY(-5px) scale(1.02);
+  border-color: var(--accent);
+}
 </style>
 </head>
 <body>
@@ -307,6 +335,16 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15)}
   </div>
   <div class="content">
 
+    <div class="panel">
+  <div class="panel-header">
+    <div class="panel-title">Your FIRE Milestones</div>
+  </div>
+  <div class="panel-body">
+    <div class="grid-4" id="milestone-container">
+      </div>
+  </div>
+</div>
+    
   <!-- DASHBOARD -->
   <div class="view active" id="view-dashboard">
     <!-- Auto-save recovery banner — shown on load if saved data exists -->
@@ -664,6 +702,17 @@ input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15)}
   <!-- PLANNING TOOLS -->
   <div class="view" id="view-tools">
 
+        <!-- Live Adjustments -->
+    <div class="nav-section-label">Live Adjustments</div>
+<div style="padding: 0 20px 20px;">
+  <div class="form-group">
+    <label class="form-label">Extra Monthly Savings</label>
+    <input type="range" id="live-savings-slider" min="0" max="5000" step="100" value="0" 
+           oninput="updateLiveSavingsDisplay(this.value)">
+    <div class="form-hint" id="live-savings-val">+$0/mo</div>
+  </div>
+</div>
+    
     <!-- Tab switcher within the view -->
     <div class="tab-list" style="margin-bottom:20px">
       <button class="tab-btn active" id="tool-tab-retire"   onclick="switchTool('retire')">🎯 Retirement Age</button>
@@ -1130,6 +1179,52 @@ const AS_THEME_KEY= 'fire_starter_theme';
 let autoSaveEnabled = false;
 let _autoSaveTimer  = null;
 
+  // 1. Live Savings Interaction
+function updateLiveSavingsDisplay(val) {
+  document.getElementById('live-savings-val').textContent = `+$${parseInt(val).toLocaleString()}/mo`;
+  recalculate(); // Trigger your existing engine
+}
+
+// 2. Milestone Calculation Logic
+function updateMilestones(annualExpenses, currentNetWorth) {
+  const container = document.getElementById('milestone-container');
+  if (!container) return;
+
+  const fullFIRE = annualExpenses / 0.04; // 4% Rule
+  
+  const milestones = [
+    { name: "Coast FIRE", multiplier: 0.25, color: "blue", desc: "Passive Growth Phase" },
+    { name: "Lean FIRE", multiplier: 0.65, color: "amber", desc: "Basic Needs Covered" },
+    { name: "Full FIRE", multiplier: 1.00, color: "green", desc: "Lifestyle Sustainable" },
+    { name: "Fat FIRE", multiplier: 2.00, color: "purple", desc: "Luxury & Buffer" }
+  ];
+
+  container.innerHTML = milestones.map(m => {
+    const target = fullFIRE * m.multiplier;
+    const progress = Math.min(100, (currentNetWorth / target) * 100).toFixed(1);
+    
+    return `
+      <div class="kpi ${m.color}">
+        <div class="kpi-label">${m.name}</div>
+        <div class="kpi-value">$${Math.round(target/1000)}k</div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width: ${progress}%"></div>
+        </div>
+        <div class="kpi-sub">${progress}% of Goal</div>
+      </div>
+    `;
+  }).join('');
+}
+
+// 3. Integration Hook
+// In your existing recalculate() function, find where you define 'monthlySavings' 
+// and add the slider value:
+// const sliderBonus = parseFloat(document.getElementById('live-savings-slider').value) || 0;
+// monthlySavings += sliderBonus;
+
+// Finally, call updateMilestones() at the end of recalculate():
+// updateMilestones(annualExpenses, netWorth);
+  
 function toggleAutoSave() {
   autoSaveEnabled = !autoSaveEnabled;
   localStorage.setItem(AS_PREF_KEY, autoSaveEnabled ? '1' : '0');
